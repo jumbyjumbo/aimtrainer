@@ -56,9 +56,9 @@ export default function Home() {
   };
 
   const calculateGoldEarned = (timeDifference) => {
-    const goldEarned = timeDifference > 950 ? 1 : Math.floor((1.3 ** ((1000 - timeDifference) * 0.01)));
-    console.log(goldEarned, timeDifference);
-    return goldEarned;
+    return timeDifference > 800 || timeDifference < 10
+      ? 1
+      : Math.floor(1.3 ** ((1000 - timeDifference) * 0.01));
   };
 
   const targetHitGoldReward = () => {
