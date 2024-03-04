@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
-  // State to hold the positions of the targets
-  const [targetPositions, setTargetPositions] = useState([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 },]);
+  // target positions
+  const [targetPositions, setTargetPositions] = useState([{ x: 0, y: 0 }]);
 
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
@@ -21,41 +21,66 @@ export default function Home() {
 
 
   //generate new random positions for the targets
-  const generatePositions = () => {
-    const newTargetPositions = targetPositions.map(() => {
-      // Subtracting 100 to ensure the target doesn't overflow the screen
-      const x = Math.random() * (window.innerWidth - 100);
-      const y = Math.random() * (window.innerHeight - 100);
-      return { x, y };
-    });
-    setTargetPositions(newTargetPositions);
-  };
+  const generatePosition = () => ({
+    x: Math.random() * (window.innerWidth - 100),
+    y: Math.random() * (window.innerHeight - 100),
+  });
+
+
   useEffect(() => {
-    generatePositions();
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    setTargetPositions(targetPositions.map(() => generatePosition()));
+  }, []);
+
+  // Function to add a new target
+  const addTarget = () => {
+    setTargetPositions(prevPositions => [...prevPositions, generatePosition()]);
+  };
+
+  const removeTarget = () => {
+    if (targetPositions.length > 1) { // Ensure at least one target remains
+      setTargetPositions(targetPositions.slice(0, -1));
+    }
+  };
+
+  useEffect(() => {
+    // Add event listener for the 'keydown' event
+    const handleKeyPress = (event) => {
+      if (event.key === 't' || event.key === 'T') {
+        addTarget();
+      }
+      if (event.key === 'g' || event.key === 'G') {
+        removeTarget();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup the event listener on component unmount
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [targetPositions]);
+
+  // regenerate position for a single target
+  // Function to regenerate position for a single target
+  const regeneratePosition = (targetID) => {
+    setTargetPositions(prevPositions =>
+      prevPositions.map((pos, index) => index === targetID ? generatePosition() : pos)
+    );
+  };
 
   // Tracking time since last target hit
   useEffect(() => {
     const interval = setInterval(() => {
       if (lastTargetHitTimestamp > 0) {
-        setTargetHitInterval(Date.now() - lastTargetHitTimestamp);
+        setTargetHitInterval(1000 - (Date.now() - lastTargetHitTimestamp));
       }
     }, 10); // Update every 0.01 seconds
 
     return () => clearInterval(interval);
   }, [lastTargetHitTimestamp]);
-
-
-  // regenerate position for a single target
-  const regeneratePosition = (targetID) => {
-    const newTargetPositions = [...targetPositions];
-    newTargetPositions[targetID] = {
-      x: Math.random() * (window.innerWidth - 100),
-      y: Math.random() * (window.innerHeight - 100),
-    };
-    setTargetPositions(newTargetPositions);
-  };
 
   // reward function
   const calculateGoldEarned = (timeDifference) => {
@@ -102,9 +127,11 @@ export default function Home() {
         {gold}
       </div>
       {/* Target hit interval */}
-      <div className="absolute top-12 left-4 text-3xl">
-        {(targetHitInterval / 1000).toFixed(2)}s
-      </div>
+      {targetHitInterval >= 0 && (
+        <div className="absolute top-12 left-4 text-3xl">
+          {(targetHitInterval / 1000).toFixed(2)}s
+        </div>
+      )}
       {/* target spawn canvas */}
       <div className="h-screen w-screen relative" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
         {/* Render each target */}
