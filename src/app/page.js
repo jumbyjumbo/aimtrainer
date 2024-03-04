@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
 
   // State to hold the positions of the targets
   const [targetPositions, setTargetPositions] = useState([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 },]);
@@ -31,6 +32,7 @@ export default function Home() {
   };
   useEffect(() => {
     generatePositions();
+    setIsLoading(false);
   }, []);
 
   // Tracking time since last target hit
@@ -55,44 +57,56 @@ export default function Home() {
     setTargetPositions(newTargetPositions);
   };
 
+  // reward function
   const calculateGoldEarned = (timeDifference) => {
     return timeDifference > 800 || timeDifference < 10
       ? 1
       : Math.floor(1.3 ** ((1000 - timeDifference) * 0.01));
   };
 
+  // gold reward based on speed
   const targetHitGoldReward = () => {
     const currentTime = Date.now();
     const timeDifference = lastTargetHitTimestamp > 0 ? currentTime - lastTargetHitTimestamp : 0;
     setLastTargetHitTimestamp(currentTime);
-    setTargetHitInterval(0); // Reset the interval immediately for UI update
+    setTargetHitInterval(0);
     const goldEarned = calculateGoldEarned(timeDifference);
     setGold((prevGold) => prevGold + goldEarned);
   };
 
+  // when u hit a target
   const onTargetHit = (targetID) => {
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
     targetHitGoldReward();
   };
 
+  // loading screen
+  if (isLoading) {
+    return <div className="font-helvetica font-bold text-black h-screen w-screen bg-blue-400 overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-6xl">
+        AIM TRAINER
+      </div>
+    </div>;
+  }
 
+  // Main game screen
   return (
-    <main className="text-black h-screen w-screen bg-blue-400 overflow-hidden">
+    <main className="font-helvetica font-bold text-black h-screen w-screen bg-blue-400 overflow-hidden">
       {/* Target hit counter */}
-      <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-6xl font-bold">
+      <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-6xl">
         {targetHitsCount}
       </div>
       {/* Gold counter */}
-      <div className="absolute top-4 left-4 text-3xl font-bold text-yellow-500">
+      <div className="absolute top-4 left-4 text-3xl text-yellow-500">
         {gold}
       </div>
       {/* Target hit interval */}
-      <div className="absolute top-4 right-4 text-3xl font-bold text-white">
-        last hit: {(targetHitInterval / 1000).toFixed(2)}s
+      <div className="absolute top-12 left-4 text-3xl">
+        {(targetHitInterval / 1000).toFixed(2)}s
       </div>
       {/* target spawn canvas */}
-      <div className="h-screen w-screen relative">
+      <div className="h-screen w-screen relative" style={{ cursor: "url('/test2.png') 32 32, auto" }}>
         {/* Render each target */}
         {targetPositions.map((targetPosition, targetID) => (
           <div

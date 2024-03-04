@@ -31,3 +31,10 @@ body {
     text-wrap: balance;
   }
 }
+
+@font-face {
+  font-family: 'helvetica';
+  src: url('/helvetica.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
