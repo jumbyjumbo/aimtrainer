@@ -106,7 +106,7 @@ export default function Home() {
         {(targetHitInterval / 1000).toFixed(2)}s
       </div>
       {/* target spawn canvas */}
-      <div className="h-screen w-screen relative" style={{ cursor: "url('/test2.png') 32 32, auto" }}>
+      <div className="h-screen w-screen relative" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
         {/* Render each target */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
