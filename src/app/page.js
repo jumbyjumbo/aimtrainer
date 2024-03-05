@@ -117,18 +117,18 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="text-stroke font-helvetica font-bold text-white h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="text-2xl md:text-6xl text-stroke font-helvetica font-bold text-white h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* Target hit counter */}
       <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-8xl">
         {targetHitsCount}
       </div>
       {/* Gold counter */}
-      <div className=" absolute top-[6%] left-4 text-6xl text-yellow-400">
+      <div className=" absolute top-[6%] left-4 text-yellow-400">
         {gold}
       </div>
       {/* Target hit interval */}
       {targetHitInterval > 0 && (
-        <div className="absolute top-[12%] left-4 text-6xl">
+        <div className="absolute top-[12%] left-4">
           {(targetHitInterval / 1000).toFixed(2)}s
         </div>
       )}
