@@ -118,8 +118,11 @@ export default function Home() {
 
   // end loading screen
   useEffect(() => {
-    setIsLoading(false);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 500); // 500ms delay
   }, []);
+
 
   // loading screen
   if (isLoading) {
@@ -157,7 +160,7 @@ export default function Home() {
         </div>
       </div>
       {/* target spawn canvas */}
-      <div className="h-screen w-screen relative" onMouseDown={onTargetMiss} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
+      <div className="h-screen w-screen absolute" onMouseDown={onTargetMiss} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
         {/* Render each target */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
