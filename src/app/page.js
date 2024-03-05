@@ -6,7 +6,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState([{ x: 0, y: 0 }]);
+  const [targetPositions, setTargetPositions] = useState(Array(6).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
@@ -93,7 +93,7 @@ export default function Home() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setProgress(prevProgress => Math.max(0, prevProgress - 22));
+      setProgress(prevProgress => Math.max(0, prevProgress - 17));
     }, 10);
 
     return () => clearInterval(intervalId);
