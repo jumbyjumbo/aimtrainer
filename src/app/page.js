@@ -128,7 +128,7 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="bg-blue-300 text-[5vh] font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="bg-gray-200 text-[5vh] font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* coin combo multiplier progress bar */}
       <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-black bg-opacity-40 flex items-center">
         <div className="h-full border-x-[3px] border-black bg-[#F89414]" style={{
