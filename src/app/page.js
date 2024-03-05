@@ -26,8 +26,8 @@ export default function Home() {
   // Store items
   const [storeItems, setStoreItems] = useState([
     { id: 0, description: '+1 target', cost: 0.3, owned: 1 },
-    { id: 1, description: '+1 max multiplier', cost: 1, owned: 0 },
-    { id: 2, description: '-10% multiplier fall off', cost: 10, owned: 0 },
+    { id: 1, description: '+10% multiplier time', cost: 1, owned: 0 },
+    { id: 2, description: '+1 max multiplier', cost: 10, owned: 0 },
     { id: 3, description: '+1 coin on hit', cost: 100, owned: 0 },
     // Add more store items here...
   ]);
@@ -46,12 +46,6 @@ export default function Home() {
       y: (Math.random() * (window.innerHeight - margin * 2) + margin / 2),
     };
   };
-
-
-  //spawn targets on load
-  useEffect(() => {
-
-  }, []);
 
   // Function to add a new target
   const addTarget = () => {
