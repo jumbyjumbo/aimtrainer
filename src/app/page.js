@@ -24,7 +24,6 @@ export default function Home() {
 
 
 
-
   //generate new random positions for the targets
   const generatePosition = () => ({
     x: Math.random() * (window.innerWidth - 100),
@@ -129,10 +128,12 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="bg-blue-400 text-[5vh] font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="bg-blue-300 text-[5vh] font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* coin combo multiplier progress bar */}
       <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-black bg-opacity-40 flex items-center">
-        <div className="h-full bg-[#F89414] border-x-[3px] border-black" style={{ width: `${(coinComboMultiplier / 10000) * 100}%` }}></div>
+        <div className="h-full border-x-[3px] border-black bg-[#F89414]" style={{
+          width: `${(coinComboMultiplier / 10000) * 100}%`,
+        }}></div>
         {/* Display current coin combo multiplier */}
         <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
           <span className="text-[3vh]">{(coinComboMultiplier / 1000).toFixed(2)}s</span>

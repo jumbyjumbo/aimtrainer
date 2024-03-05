@@ -38,3 +38,7 @@ body {
   font-weight: normal;
   font-style: normal;
 }
+
+.progress-transition {
+  transition: background-color 1000ms;
+}
