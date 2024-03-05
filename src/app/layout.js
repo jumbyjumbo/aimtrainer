@@ -1,9 +1,8 @@
-import { Inter } from "next/font/google";
 import "./globals.css";
 
 export const metadata = {
   title: "aimtrainer",
-  description: "2D roguelike aimtrainer",
+  description: "aimtrainer clicker",
 };
 
 export default function RootLayout({ children }) {

@@ -23,6 +23,50 @@ export default function Home() {
   // Store open state
   const [isCoinStoreOpen, setIsCoinStoreOpen] = useState(false);
 
+  // Store items
+  const [storeItems, setStoreItems] = useState([
+    { id: 0, description: '+1 target', cost: 1 },
+    // Add more store items here...
+  ]);
+
+  const purchaseItem = (itemId) => {
+    // Find the index of the item in the storeItems array
+    const itemIndex = storeItems.findIndex(item => item.id === itemId);
+
+    if (itemIndex !== -1 && Coin >= storeItems[itemIndex].cost) {
+      // Extract the item using the found index
+      const item = storeItems[itemIndex];
+
+      // Perform actions based on the item description or other attributes
+      switch (item.description) {
+        case '+1 target':
+          addTarget();
+          break;
+        // Add more cases as needed
+      }
+
+      // Deduct coin cost
+      setCoin(prevCoin => prevCoin - item.cost);
+      console.log('purchased', item.description, 'for', item.cost, 'Coin');
+
+      // Update the storeItems state to reflect the new cost
+      // Ensure this part is within the same function where itemIndex is defined
+      const updatedStoreItems = storeItems.map((currentItem, index) => {
+        if (index === itemIndex) {
+          return { ...currentItem, cost: currentItem.cost * 10 }; // Update the cost
+        }
+        return currentItem;
+      });
+
+      // Assuming you have a setState method for storeItems, e.g., setStoreItems
+      setStoreItems(updatedStoreItems); // This requires storeItems to be part of your component's state
+    } else {
+      console.log('Not enough Coin to purchase item');
+    }
+  };
+
+
+
 
 
   //generate new random positions for the targets
@@ -158,7 +202,6 @@ export default function Home() {
       {/* Coin counter */}
       <div className="absolute top-[5vh] left-[2vw] flex items-center">
         <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
-        {/* Spacer div */}
         <div style={{ width: '0.5vw' }}></div>
         <div>
           {Coin.toFixed(5)}
@@ -184,18 +227,24 @@ export default function Home() {
       </div>
       {/* coin store */}
       {isCoinStoreOpen && (
-        <div className="absolute w-screen h-[83.5vh] top-[16.5vh] bg-gray-200 flex flex-col border-t-[3px] border-black">
+        <div className="absolute w-screen h-[83.5vh] top-[16.5vh] bg-gray-200 flex flex-col ">
           {/* "UPGRADE" text section */}
-          <div className="bg-green-200 text-center py-[0.25vh] text-[5vh]">UPGRADE</div>
+          <div className="bg-green-200 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">UPGRADE</div>
           {/* Grid section */}
           <div className="grid grid-cols-5 grid-rows-3 flex-grow p-[1.5px]">
-            {Array.from({ length: 15 }).map((_, upgradeID) => (
+            {storeItems.map((item, index) => (
               <div
-                key={upgradeID}
-                className={`border-r-[3px] border-b-[3px] border-black ${upgradeID % 5 === 0 ? 'border-l-[3px]' : ''
-                  } ${upgradeID < 5 ? 'border-t-[3px]' : ''}`}
+                key={item.id}
+                className="flex flex-col bg-gray-300 px-[1vw] pt-[5vh]"
+                onMouseDown={() => purchaseItem(item.id)}
               >
-                <div>{upgradeID + 1}</div>
+                <div className="flex-1 text-[7vh] self-center">{item.description}</div>
+                {/* Item cost */}
+                <div className="flex-1 flex items-center">
+                  <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
+                  <div style={{ width: '0.5vw' }}></div>
+                  <span>{item.cost}</span>
+                </div>
               </div>
             ))}
           </div>
