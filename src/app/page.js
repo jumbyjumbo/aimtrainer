@@ -10,8 +10,8 @@ export default function Home() {
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
 
-  // State to track the amount of gold the player has
-  const [gold, setGold] = useState(0);
+  // State to track the amount of Coin the player has
+  const [Coin, setCoin] = useState(0);
 
   // Store the timestamp of the last hit
   const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
@@ -25,11 +25,6 @@ export default function Home() {
     x: Math.random() * (window.innerWidth - 100),
     y: Math.random() * (window.innerHeight - 100),
   });
-
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
 
   useEffect(() => {
     setTargetPositions(targetPositions.map(() => generatePosition()));
@@ -83,28 +78,32 @@ export default function Home() {
   }, [lastTargetHitTimestamp]);
 
   // reward function
-  const calculateGoldEarned = (timeDifference) => {
+  const calculateCoinEarned = (timeDifference) => {
     return timeDifference > 800 || timeDifference < 10
       ? 1
       : Math.floor(1.3 ** ((1000 - timeDifference) * 0.01));
   };
 
-  // gold reward based on speed
-  const targetHitGoldReward = () => {
+  // Coin reward based on speed
+  const targetHitCoinReward = () => {
     const currentTime = Date.now();
     const timeDifference = lastTargetHitTimestamp > 0 ? currentTime - lastTargetHitTimestamp : 0;
     setLastTargetHitTimestamp(currentTime);
     setTargetHitInterval(0);
-    const goldEarned = calculateGoldEarned(timeDifference);
-    setGold((prevGold) => prevGold + goldEarned);
+    const CoinEarned = calculateCoinEarned(timeDifference);
+    setCoin((prevCoin) => prevCoin + CoinEarned);
   };
 
   // when u hit a target
   const onTargetHit = (targetID) => {
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
-    targetHitGoldReward();
+    targetHitCoinReward();
   };
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
 
   // loading screen
   if (isLoading) {
@@ -117,18 +116,23 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="text-2xl md:text-6xl font-helvetica font-bold text-white h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="text-2xl md:text-6xl font-helvetica font-bold text-black h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* Target hit counter */}
       <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-4xl md:text-8xl">
         {targetHitsCount}
       </div>
-      {/* Gold counter */}
-      <div className=" absolute top-[6%] left-4">
-        {gold}
+      {/* Coin counter */}
+      <div className="absolute top-[6%] left-[4%] flex items-center">
+        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '2vw', height: '2vw' }} />
+        {/* Spacer div */}
+        <div style={{ width: '0.5vw' }}></div>
+        <div>
+          {Coin}
+        </div>
       </div>
       {/* Target hit interval */}
       {targetHitInterval > 0 && (
-        <div className="absolute top-[12%] left-4">
+        <div className="absolute top-[12%] left-[4%]">
           {(targetHitInterval / 1000).toFixed(2)}s
         </div>
       )}
@@ -138,7 +142,7 @@ export default function Home() {
         {targetPositions.map((targetPosition, targetID) => (
           <div
             key={targetID}
-            onMouseDown={() => onTargetHit(targetID)} // Regenerate position for this target on hit
+            onMouseDown={() => onTargetHit(targetID)}
             className="absolute w-24 h-24 bg-red-600 rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x}px`,
