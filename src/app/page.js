@@ -14,14 +14,12 @@ export default function Home() {
   // State to track the amount of Coin the player has
   const [Coin, setCoin] = useState(0);
 
-  // Store the timestamp of the last hit
+  //  target hit interval in milliseconds
   const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
 
-  // Store the time elapsed since the last hit
-  const [targetHitInterval, setTargetHitInterval] = useState(0);
+  //  coin combo multiplier progress in milliseconds
+  const [coinComboMultiplier, setCoinComboMultiplier] = useState(0);
 
-  // coin multiplier progress in milliseconds
-  const [progress, setProgress] = useState(0);
 
 
 
@@ -73,57 +71,53 @@ export default function Home() {
     );
   };
 
-  // Tracking time since last target hit
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (lastTargetHitTimestamp > 0) {
-        setTargetHitInterval(1000 - (Date.now() - lastTargetHitTimestamp));
-      }
-    }, 10); // Update every 0.01 seconds
-
-    return () => clearInterval(interval);
-  }, [lastTargetHitTimestamp]);
-
-  // reward function
+  // base coin reward function
   const calculateCoinEarned = (timeDifference) => {
     return timeDifference > 800 || timeDifference < 10
       ? 1
       : Math.floor(1.3 ** ((1000 - timeDifference) * 0.01));
   };
 
+
+
+  // coin combo multiplier goes down at rate of 15ms/10ms
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setProgress(prevProgress => Math.max(0, prevProgress - 17));
+      setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 15));
     }, 10);
 
     return () => clearInterval(intervalId);
   }, []);
 
-
-  // Coin reward based on speed
+  // Coin reward per target hit
   const targetHitCoinReward = () => {
     const currentTime = Date.now();
     const timeDifference = lastTargetHitTimestamp > 0 ? currentTime - lastTargetHitTimestamp : 0;
     setLastTargetHitTimestamp(currentTime);
-    setTargetHitInterval(0);
-    const CoinEarned = calculateCoinEarned(timeDifference);
-    setCoin((prevCoin) => prevCoin + CoinEarned);
+    // base Coin reward based on last target hit interval
+    const baseCoinEarned = calculateCoinEarned(timeDifference);
+    // bonus coin combo multiplier based on progress bar
+    const finalCoinEarned = baseCoinEarned * Math.max(1, coinComboMultiplier / 1000);
+    // Update Coin state with the final amount earned
+    setCoin((prevCoin) => prevCoin + finalCoinEarned);
   };
+
 
   // when u hit a target
   const onTargetHit = (targetID) => {
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
     targetHitCoinReward();
-    setProgress(prevProgress => Math.min(10000, prevProgress + 1000));
+    setCoinComboMultiplier(prevCoinComboMultiplier => Math.min(10000, prevCoinComboMultiplier + 1000));
   };
 
+  // target miss penalty
   const onTargetMiss = () => {
-    // Example penalty for missing a target
     setCoin(prevCoin => Math.max(0, prevCoin - 10)); // remove 10 coins
-    setProgress(prevProgress => Math.max(0, prevProgress - 2000)); //lower coin multiplier by 2s
+    setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 2000)); //lower coin multiplier by 2s
   };
 
+  // end loading screen
   useEffect(() => {
     setIsLoading(false);
   }, []);
@@ -140,33 +134,28 @@ export default function Home() {
   // Main game screen
   return (
     <main className="bg-blue-400 text-2xl md:text-6xl font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
-      {/* coin multiplier progress bar */}
-      <div className="border-b-4 border-black absolute top-0 left-0 w-full h-[4vh] bg-black bg-opacity-40">
-        <div className="h-full bg-[#F89414]" style={{ width: `${(progress / 10000) * 100}%` }}></div>
-        {/* Display progress in seconds */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 text-[2.5vh]" style={{ lineHeight: '3vh' }}>
-          {(progress / 1000).toFixed(2)}s
+      {/* coin combo multiplier progress bar */}
+      <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[3vh] bg-black bg-opacity-40 flex items-center">
+        <div className="h-full bg-[#F89414] border-r-[3px] border-black" style={{ width: `${(coinComboMultiplier / 10000) * 100}%` }}></div>
+        {/* Display current coin combo multiplier */}
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex items-center justify-center w-full h-[3vh]">
+          <span className="text-[2.2vh]">{(coinComboMultiplier / 1000).toFixed(2)}s</span>
         </div>
       </div>
+
       {/* Target hit counter */}
       <div className="absolute top-[5vh] left-1/2 transform -translate-x-1/2 text-center text-4xl md:text-8xl">
         {targetHitsCount}
       </div>
       {/* Coin counter */}
       <div className="absolute top-[5vh] left-[2vw] flex items-center">
-        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '2vw', height: '2vw' }} className="border-4 border-black rounded-full" />
+        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '2vw', height: '2vw' }} className="border-[3px] border-black rounded-full" />
         {/* Spacer div */}
         <div style={{ width: '0.5vw' }}></div>
         <div>
           {Coin}
         </div>
       </div>
-      {/* Target hit interval */}
-      {targetHitInterval > 0 && (
-        <div className="hidden absolute top-[10vh] left-[2vw]">
-          {(targetHitInterval / 1000).toFixed(2)}s
-        </div>
-      )}
       {/* target spawn canvas */}
       <div className="h-screen w-screen relative" onMouseDown={onTargetMiss}>
         {/* Render each target */}
