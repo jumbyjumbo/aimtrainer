@@ -6,7 +6,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(100).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
@@ -21,7 +21,7 @@ export default function Home() {
   const [coinComboMultiplier, setCoinComboMultiplier] = useState(0);
 
   // Store open state
-  const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [isCoinStoreOpen, setIsCoinStoreOpen] = useState(false);
 
 
 
@@ -62,7 +62,7 @@ export default function Home() {
       }
       // Toggle store on space bar press
       if (event.key === ' ' || event.code === 'Space') {
-        setIsStoreOpen((prevIsStoreOpen) => !prevIsStoreOpen);
+        setIsCoinStoreOpen((previsCoinStoreOpen) => !previsCoinStoreOpen);
       }
     };
 
@@ -166,7 +166,7 @@ export default function Home() {
       </div>
       {/* target spawn canvas */}
       <div className="h-screen w-screen absolute" onMouseDown={onTargetMiss} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
-        {/* Render each target */}
+        {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
             key={targetID}
@@ -182,7 +182,8 @@ export default function Home() {
           />
         ))}
       </div>
-      {isStoreOpen && (
+      {/* coin store */}
+      {isCoinStoreOpen && (
         <div className="absolute w-screen h-[83.5vh] top-[16.5vh] bg-gray-200 flex flex-col border-t-[3px] border-black">
           {/* "UPGRADE" text section */}
           <div className="bg-green-200 text-center py-[0.25vh] text-[5vh]">UPGRADE</div>
