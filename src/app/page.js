@@ -126,7 +126,7 @@ export default function Home() {
     setTargetPositions(targetPositions.map(() => generatePosition()));
     setTimeout(() => {
       setIsLoading(false);
-    }, 150); // 150ms delay
+    }, 200); // 200ms delay
   }, []);
 
   // loading screen
