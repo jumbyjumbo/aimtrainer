@@ -6,7 +6,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(6).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(100).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
@@ -26,13 +26,18 @@ export default function Home() {
 
 
   //generate new random positions for the targets
-  const generatePosition = () => ({
-    x: Math.random() * (window.innerWidth - 100),
-    y: Math.random() * (window.innerHeight - 100),
-  });
+  const generatePosition = () => {
+    const margin = 100;
+    return {
+      x: (Math.random() * (window.innerWidth - margin * 2) + margin / 2),
+      y: (Math.random() * (window.innerHeight - margin * 2) + margin / 2),
+    };
+  };
 
+
+  //spawn targets on load
   useEffect(() => {
-    setTargetPositions(targetPositions.map(() => generatePosition()));
+
   }, []);
 
   // Function to add a new target
@@ -116,17 +121,17 @@ export default function Home() {
     setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 2000)); //lower coin multiplier by 2s
   };
 
-  // end loading screen
+  // on load function
   useEffect(() => {
+    setTargetPositions(targetPositions.map(() => generatePosition()));
     setTimeout(() => {
       setIsLoading(false);
-    }, 500); // 500ms delay
+    }, 150); // 150ms delay
   }, []);
-
 
   // loading screen
   if (isLoading) {
-    return <div className="bg-gray-200 font-bold h-screen w-screen overflow-hidden" >
+    return <div className="bg-blue-200 font-bold h-screen w-screen overflow-hidden" >
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-9xl">
         AIM TRAINER
       </div>
