@@ -129,23 +129,23 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="bg-blue-400 text-2xl md:text-6xl font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="bg-blue-400 text-[5vh] font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* coin combo multiplier progress bar */}
-      <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[3vh] bg-black bg-opacity-40 flex items-center">
-        <div className="h-full bg-[#F89414] border-r-[3px] border-black" style={{ width: `${(coinComboMultiplier / 10000) * 100}%` }}></div>
+      <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-black bg-opacity-40 flex items-center">
+        <div className="h-full bg-[#F89414] border-x-[3px] border-black" style={{ width: `${(coinComboMultiplier / 10000) * 100}%` }}></div>
         {/* Display current coin combo multiplier */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex items-center justify-center w-full h-[3vh]">
-          <span className="text-[2.2vh]">{(coinComboMultiplier / 1000).toFixed(2)}s</span>
+        <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
+          <span className="text-[3vh]">{(coinComboMultiplier / 1000).toFixed(2)}s</span>
         </div>
       </div>
 
       {/* Target hit counter */}
-      <div className="absolute top-[5vh] left-1/2 transform -translate-x-1/2 text-center text-4xl md:text-8xl">
+      <div className="absolute top-[5vh] left-1/2 transform -translate-x-1/2 text-center text-[10vh]">
         {targetHitsCount}
       </div>
       {/* Coin counter */}
-      <div className="absolute top-[5vh] left-[2vw] flex items-center">
-        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '64px', height: '64px' }} className="border-[3px] border-black rounded-full" />
+      <div className="absolute top-[10vh] left-[2vw] flex items-center">
+        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
         {/* Spacer div */}
         <div style={{ width: '0.5vw' }}></div>
         <div>
