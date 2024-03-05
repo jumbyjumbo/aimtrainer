@@ -120,7 +120,7 @@ export default function Home() {
   // loading screen
   if (isLoading) {
     return <div className="bg-gray-200 font-bold h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-6xl">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-9xl">
         AIM TRAINER
       </div>
     </div>;
@@ -162,7 +162,7 @@ export default function Home() {
               e.stopPropagation();
               onTargetHit(targetID);
             }}
-            className="absolute w-24 h-24 bg-red-600 rounded-full border-[3px] border-black"
+            className="absolute w-[9vh] h-[9vh] bg-red-600 rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x}px`,
               top: `${targetPosition.y}px`,
