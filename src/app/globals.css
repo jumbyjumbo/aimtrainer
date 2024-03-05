@@ -39,6 +39,10 @@ body {
   font-style: normal;
 }
 
-.text-stroke {
-  -webkit-text-stroke: 3px black; 
+.text-stroke-3px {
+  -webkit-text-stroke: 3px black;
+}
+
+.text-stroke-1px {
+  -webkit-text-stroke: 1px black;
 }
