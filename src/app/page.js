@@ -46,6 +46,7 @@ export default function Home() {
     }
   };
 
+  // input event listener
   useEffect(() => {
     // Add event listener for the 'keydown' event
     const handleKeyPress = (event) => {
@@ -64,7 +65,6 @@ export default function Home() {
   }, [targetPositions]);
 
   // regenerate position for a single target
-  // Function to regenerate position for a single target
   const regeneratePosition = (targetID) => {
     setTargetPositions(prevPositions =>
       prevPositions.map((pos, index) => index === targetID ? generatePosition() : pos)
@@ -117,23 +117,23 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="font-helvetica font-bold text-black h-screen w-screen bg-blue-400 overflow-hidden">
+    <main className="text-stroke font-helvetica font-bold text-white h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* Target hit counter */}
-      <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-6xl">
+      <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-8xl">
         {targetHitsCount}
       </div>
       {/* Gold counter */}
-      <div className="absolute top-4 left-4 text-3xl text-yellow-500">
+      <div className=" absolute top-[6%] left-4 text-6xl text-yellow-400">
         {gold}
       </div>
       {/* Target hit interval */}
       {targetHitInterval >= 0 && (
-        <div className="absolute top-12 left-4 text-3xl">
+        <div className="absolute top-[12%] left-4 text-6xl">
           {(targetHitInterval / 1000).toFixed(2)}s
         </div>
       )}
       {/* target spawn canvas */}
-      <div className="h-screen w-screen relative" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+      <div className="h-screen w-screen relative">
         {/* Render each target */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
