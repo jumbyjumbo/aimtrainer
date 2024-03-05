@@ -25,45 +25,14 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, description: '+1 target', cost: 1 },
+    { id: 0, description: '+1 target', cost: 0.3, owned: 1 },
+    { id: 1, description: '+1 max multiplier', cost: 1, owned: 0 },
+    { id: 2, description: '-10% multiplier fall off', cost: 10, owned: 0 },
+    { id: 3, description: '+1 coin on hit', cost: 100, owned: 0 },
     // Add more store items here...
   ]);
 
-  const purchaseItem = (itemId) => {
-    // Find the index of the item in the storeItems array
-    const itemIndex = storeItems.findIndex(item => item.id === itemId);
 
-    if (itemIndex !== -1 && Coin >= storeItems[itemIndex].cost) {
-      // Extract the item using the found index
-      const item = storeItems[itemIndex];
-
-      // Perform actions based on the item description or other attributes
-      switch (item.description) {
-        case '+1 target':
-          addTarget();
-          break;
-        // Add more cases as needed
-      }
-
-      // Deduct coin cost
-      setCoin(prevCoin => prevCoin - item.cost);
-      console.log('purchased', item.description, 'for', item.cost, 'Coin');
-
-      // Update the storeItems state to reflect the new cost
-      // Ensure this part is within the same function where itemIndex is defined
-      const updatedStoreItems = storeItems.map((currentItem, index) => {
-        if (index === itemIndex) {
-          return { ...currentItem, cost: currentItem.cost * 10 }; // Update the cost
-        }
-        return currentItem;
-      });
-
-      // Assuming you have a setState method for storeItems, e.g., setStoreItems
-      setStoreItems(updatedStoreItems); // This requires storeItems to be part of your component's state
-    } else {
-      console.log('Not enough Coin to purchase item');
-    }
-  };
 
 
 
@@ -165,6 +134,40 @@ export default function Home() {
     setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 2000)); //lower coin multiplier by 2s
   };
 
+  // Function to purchase an item from the store
+  const purchaseItem = (itemId) => {
+    // Find the index of the item in the storeItems array
+    const itemIndex = storeItems.findIndex(item => item.id === itemId);
+
+    if (itemIndex !== -1 && Coin >= storeItems[itemIndex].cost) {
+      // Extract the item using the found index
+      const item = storeItems[itemIndex];
+
+      // Perform actions based on the item description or other attributes
+      switch (item.description) {
+        case '+1 target':
+          addTarget();
+          break;
+        // Add more cases as needed
+      }
+
+      // Deduct coin cost from player's Coins
+      setCoin(prevCoin => prevCoin - item.cost);
+      console.log('purchased', item.description, 'for', item.cost, 'Coin');
+
+      // cost increases each purchase
+      const updatedStoreItems = storeItems.map((currentItem, index) => {
+        if (index === itemIndex) {
+          return { ...currentItem, cost: ((currentItem.cost * 5) ** 1.3).toFixed(2) };
+        }
+        return currentItem;
+      });
+
+      setStoreItems(updatedStoreItems);
+    } else {
+    }
+  };
+
   // on load function
   useEffect(() => {
     setTargetPositions(targetPositions.map(() => generatePosition()));
@@ -175,7 +178,7 @@ export default function Home() {
 
   // loading screen
   if (isLoading) {
-    return <div className="bg-blue-200 font-bold h-screen w-screen overflow-hidden" >
+    return <div className="bg-blue-500 font-bold h-screen w-screen overflow-hidden" >
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-9xl">
         AIM TRAINER
       </div>
@@ -186,14 +189,16 @@ export default function Home() {
   return (
     <main className="select-none bg-gray-200 text-[5vh] font-bold h-screen w-screen overflow-hidden" >
       {/* coin combo multiplier progress bar */}
-      <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-black bg-opacity-40 flex items-center">
+      <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#F89414] bg-opacity-60 flex items-center">
         <div className="h-full border-x-[3px] border-black bg-[#F89414]" style={{
           width: `${(coinComboMultiplier / 10000) * 100}%`,
         }}></div>
         {/* Display current coin combo multiplier */}
-        <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
-          <span className="text-[3vh]">{(coinComboMultiplier / 1000).toFixed(2)}s</span>
-        </div>
+        {coinComboMultiplier > 0 && (
+          <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
+            <span className="text-[3vh]">COMBO x{(coinComboMultiplier / 1000).toFixed(2)}</span>
+          </div>
+        )}
       </div>
       {/* Target hit counter */}
       <div className="absolute top-[3vh] left-1/2 transform -translate-x-1/2 text-center text-[10vh]">
@@ -227,18 +232,18 @@ export default function Home() {
       </div>
       {/* coin store */}
       {isCoinStoreOpen && (
-        <div className="absolute w-screen h-[83.5vh] top-[16.5vh] bg-gray-200 flex flex-col ">
+        <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-500 flex flex-col bg-opacity-80">
           {/* "UPGRADE" text section */}
-          <div className="bg-green-200 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">UPGRADE</div>
+          <div className="bg-opacity-85 bg-blue-500 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">STORE</div>
           {/* Grid section */}
-          <div className="grid grid-cols-5 grid-rows-3 flex-grow p-[1.5px]">
+          <div className="grid grid-cols-5 grid-rows-3 gap-[1vh] flex-grow p-[2vh]">
             {storeItems.map((item, index) => (
               <div
                 key={item.id}
-                className="flex flex-col bg-gray-300 px-[1vw] pt-[5vh]"
+                className="flex flex-col bg-green-200 px-[1vw] pt-[5vh] bg-opacity-70 border-[3px] border-black"
                 onMouseDown={() => purchaseItem(item.id)}
               >
-                <div className="flex-1 text-[7vh] self-center">{item.description}</div>
+                <div className="flex-1 text-[4vh] self-center">{item.description}</div>
                 {/* Item cost */}
                 <div className="flex-1 flex items-center">
                   <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
