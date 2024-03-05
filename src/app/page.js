@@ -145,7 +145,7 @@ export default function Home() {
       </div>
       {/* Coin counter */}
       <div className="absolute top-[5vh] left-[2vw] flex items-center">
-        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '2vw', height: '2vw' }} className="border-[3px] border-black rounded-full" />
+        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '64px', height: '64px' }} className="border-[3px] border-black rounded-full" />
         {/* Spacer div */}
         <div style={{ width: '0.5vw' }}></div>
         <div>
