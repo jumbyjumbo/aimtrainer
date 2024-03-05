@@ -127,7 +127,7 @@ export default function Home() {
         {gold}
       </div>
       {/* Target hit interval */}
-      {targetHitInterval >= 0 && (
+      {targetHitInterval > 0 && (
         <div className="absolute top-[12%] left-4 text-6xl">
           {(targetHitInterval / 1000).toFixed(2)}s
         </div>
