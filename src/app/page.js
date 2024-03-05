@@ -20,7 +20,8 @@ export default function Home() {
   //  coin combo multiplier progress in milliseconds
   const [coinComboMultiplier, setCoinComboMultiplier] = useState(0);
 
-
+  // Store open state
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
 
 
 
@@ -47,13 +48,16 @@ export default function Home() {
 
   // input event listener
   useEffect(() => {
-    // Add event listener for the 'keydown' event
     const handleKeyPress = (event) => {
       if (event.key === 't' || event.key === 'T') {
         addTarget();
       }
       if (event.key === 'g' || event.key === 'G') {
         removeTarget();
+      }
+      // Toggle store on space bar press
+      if (event.key === ' ' || event.code === 'Space') {
+        setIsStoreOpen((prevIsStoreOpen) => !prevIsStoreOpen);
       }
     };
 
@@ -119,7 +123,7 @@ export default function Home() {
 
   // loading screen
   if (isLoading) {
-    return <div className="bg-gray-200 font-bold h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    return <div className="bg-gray-200 font-bold h-screen w-screen overflow-hidden" >
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-9xl">
         AIM TRAINER
       </div>
@@ -128,7 +132,7 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="bg-gray-200 text-[5vh] font-bold h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="select-none bg-gray-200 text-[5vh] font-bold h-screen w-screen overflow-hidden" >
       {/* coin combo multiplier progress bar */}
       <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-black bg-opacity-40 flex items-center">
         <div className="h-full border-x-[3px] border-black bg-[#F89414]" style={{
@@ -140,11 +144,11 @@ export default function Home() {
         </div>
       </div>
       {/* Target hit counter */}
-      <div className="absolute top-[5vh] left-1/2 transform -translate-x-1/2 text-center text-[10vh]">
+      <div className="absolute top-[3vh] left-1/2 transform -translate-x-1/2 text-center text-[10vh]">
         {targetHitsCount}
       </div>
       {/* Coin counter */}
-      <div className="absolute top-[10vh] left-[2vw] flex items-center">
+      <div className="absolute top-[5vh] left-[2vw] flex items-center">
         <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
         {/* Spacer div */}
         <div style={{ width: '0.5vw' }}></div>
@@ -153,7 +157,7 @@ export default function Home() {
         </div>
       </div>
       {/* target spawn canvas */}
-      <div className="h-screen w-screen relative" onMouseDown={onTargetMiss}>
+      <div className="h-screen w-screen relative" onMouseDown={onTargetMiss} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
         {/* Render each target */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
@@ -170,6 +174,24 @@ export default function Home() {
           />
         ))}
       </div>
+      {isStoreOpen && (
+        <div className="absolute w-screen h-[83.5vh] top-[16.5vh] bg-gray-200 flex flex-col border-t-[3px] border-black">
+          {/* "UPGRADE" text section */}
+          <div className="bg-green-200 text-center py-[0.25vh] text-[5vh]">UPGRADE</div>
+          {/* Grid section */}
+          <div className="grid grid-cols-5 grid-rows-3 flex-grow p-[1.5px]">
+            {Array.from({ length: 15 }).map((_, upgradeID) => (
+              <div
+                key={upgradeID}
+                className={`border-r-[3px] border-b-[3px] border-black ${upgradeID % 5 === 0 ? 'border-l-[3px]' : ''
+                  } ${upgradeID < 5 ? 'border-t-[3px]' : ''}`}
+              >
+                <div>{upgradeID + 1}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
