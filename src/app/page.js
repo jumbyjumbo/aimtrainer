@@ -71,14 +71,11 @@ export default function Home() {
     );
   };
 
-  // base coin reward function
+  // Base coin reward function based on time elapsed since last target hit
   const calculateCoinEarned = (timeDifference) => {
-    return timeDifference > 800 || timeDifference < 10
-      ? 1
-      : Math.floor(1.3 ** ((1000 - timeDifference) * 0.01));
+    const potentialReward = (1.3 ** ((1000 - timeDifference) * 0.01));
+    return potentialReward < 1 || timeDifference == 0 ? 1 : potentialReward;
   };
-
-
 
   // coin combo multiplier goes down at rate of 15ms/10ms
   useEffect(() => {
@@ -98,10 +95,9 @@ export default function Home() {
     const baseCoinEarned = calculateCoinEarned(timeDifference);
     // bonus coin combo multiplier based on progress bar
     const finalCoinEarned = baseCoinEarned * Math.max(1, coinComboMultiplier / 1000);
-    // Update Coin state with the final amount earned
-    setCoin((prevCoin) => prevCoin + finalCoinEarned);
+    // Update Coin state with the final amount earned at 1% of final reward
+    setCoin((prevCoin) => prevCoin + finalCoinEarned * 0.01);
   };
-
 
   // when u hit a target
   const onTargetHit = (targetID) => {
@@ -113,7 +109,7 @@ export default function Home() {
 
   // target miss penalty
   const onTargetMiss = () => {
-    setCoin(prevCoin => Math.max(0, prevCoin - 10)); // remove 10 coins
+    setCoin(prevCoin => Math.max(0, prevCoin - 1)); // remove 1 coin
     setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 2000)); //lower coin multiplier by 2s
   };
 
@@ -153,7 +149,7 @@ export default function Home() {
         {/* Spacer div */}
         <div style={{ width: '0.5vw' }}></div>
         <div>
-          {Coin}
+          {Coin.toFixed(5)}
         </div>
       </div>
       {/* target spawn canvas */}
