@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 export default function Home() {
+  // loading state
   const [isLoading, setIsLoading] = useState(true);
 
   // target positions
@@ -18,6 +19,12 @@ export default function Home() {
 
   // Store the time elapsed since the last hit
   const [targetHitInterval, setTargetHitInterval] = useState(0);
+
+  // coin multiplier progress in milliseconds
+  const [progress, setProgress] = useState(0);
+
+
+
 
 
   //generate new random positions for the targets
@@ -84,6 +91,15 @@ export default function Home() {
       : Math.floor(1.3 ** ((1000 - timeDifference) * 0.01));
   };
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setProgress(prevProgress => Math.max(0, prevProgress - 22));
+    }, 10);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+
   // Coin reward based on speed
   const targetHitCoinReward = () => {
     const currentTime = Date.now();
@@ -99,6 +115,13 @@ export default function Home() {
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
     targetHitCoinReward();
+    setProgress(prevProgress => Math.min(10000, prevProgress + 1000));
+  };
+
+  const onTargetMiss = () => {
+    // Example penalty for missing a target
+    setCoin(prevCoin => Math.max(0, prevCoin - 10)); // remove 10 coins
+    setProgress(prevProgress => Math.max(0, prevProgress - 2000)); //lower coin multiplier by 2s
   };
 
   useEffect(() => {
@@ -116,14 +139,22 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="text-2xl md:text-6xl font-helvetica font-bold text-black h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="bg-blue-400 text-2xl md:text-6xl font-helvetica font-bold text-black h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+      {/* coin multiplier progress bar */}
+      <div className="border-b-4 border-black absolute top-0 left-0 w-full h-[4vh] bg-black bg-opacity-40">
+        <div className="h-full bg-[#F89414]" style={{ width: `${(progress / 10000) * 100}%` }}></div>
+        {/* Display progress in seconds */}
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 text-[2.5vh]" style={{ lineHeight: '3vh' }}>
+          {(progress / 1000).toFixed(2)}s
+        </div>
+      </div>
       {/* Target hit counter */}
-      <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-4xl md:text-8xl">
+      <div className="absolute top-[5vh] left-1/2 transform -translate-x-1/2 text-center text-4xl md:text-8xl">
         {targetHitsCount}
       </div>
       {/* Coin counter */}
-      <div className="absolute top-[6%] left-[4%] flex items-center">
-        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '2vw', height: '2vw' }} />
+      <div className="absolute top-[5vh] left-[2vw] flex items-center">
+        <img src="/btclogo.png" alt="BTC Logo" style={{ width: '2vw', height: '2vw' }} className="border-4 border-black rounded-full" />
         {/* Spacer div */}
         <div style={{ width: '0.5vw' }}></div>
         <div>
@@ -132,17 +163,20 @@ export default function Home() {
       </div>
       {/* Target hit interval */}
       {targetHitInterval > 0 && (
-        <div className="absolute top-[12%] left-[4%]">
+        <div className="hidden absolute top-[10vh] left-[2vw]">
           {(targetHitInterval / 1000).toFixed(2)}s
         </div>
       )}
       {/* target spawn canvas */}
-      <div className="h-screen w-screen relative">
+      <div className="h-screen w-screen relative" onMouseDown={onTargetMiss}>
         {/* Render each target */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
             key={targetID}
-            onMouseDown={() => onTargetHit(targetID)}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              onTargetHit(targetID);
+            }}
             className="absolute w-24 h-24 bg-red-600 rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x}px`,
