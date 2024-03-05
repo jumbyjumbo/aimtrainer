@@ -119,7 +119,7 @@ export default function Home() {
 
   // loading screen
   if (isLoading) {
-    return <div className="font-bold h-screen w-screen  overflow-hidden">
+    return <div className="bg-gray-200 font-bold h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-6xl">
         AIM TRAINER
       </div>
@@ -128,7 +128,7 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="text-[5vh] font-bold h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="bg-gray-200 text-[5vh] font-bold h-screen w-screen overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* coin combo multiplier progress bar */}
       <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-black bg-opacity-40 flex items-center">
         <div className="h-full border-x-[3px] border-black bg-[#F89414]" style={{
