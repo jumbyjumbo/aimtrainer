@@ -117,7 +117,7 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="text-2xl md:text-6xl text-stroke-1px md:text-stroke-3px font-helvetica font-bold text-white h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
+    <main className="text-2xl md:text-6xl sm:text-stroke-1px text-stroke-3px font-helvetica font-bold text-white h-screen w-screen bg-blue-400 overflow-hidden" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
       {/* Target hit counter */}
       <div className="absolute top-[6%] left-1/2 transform -translate-x-1/2 text-center text-4xl md:text-8xl">
         {targetHitsCount}
