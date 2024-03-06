@@ -39,9 +39,4 @@ body {
   font-style: normal;
 }
 
-body, html {
-  overflow: hidden; /* Prevents scrolling */
-  position: fixed; /* Keeps the view locked in place */
-  width: 100%;
-  height: 100%;
-}
+
