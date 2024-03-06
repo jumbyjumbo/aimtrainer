@@ -25,7 +25,7 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.0, owned: 0, growthRate: Math.E },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: Math.E },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: Math.E },
     { id: 2, buff: '+1 max combo', baseCost: 1, owned: 0, growthRate: 1.07 },
     { id: 3, buff: '+10% target size', baseCost: 11, owned: 0, growthRate: Math.E },
@@ -86,7 +86,9 @@ export default function Home() {
     return potentialReward < 1 || timeDifference == 0 ? 1 : potentialReward;
   };
 
-  // coin combo multiplier goes down at rate of 15ms/10ms
+  // coin combo multiplier goes down at rate of 15ms/10ms 
+  //TO LINK WITH ITEM BUFF
+  //decrease rate drop off
   useEffect(() => {
     const intervalId = setInterval(() => {
       setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 15));
@@ -96,6 +98,8 @@ export default function Home() {
   }, []);
 
   // Coin reward per target hit
+  //TO LINK WITH ITEM BUFF
+  //coin boost speed buff
   const targetHitCoinReward = () => {
     const currentTime = Date.now();
     const timeDifference = lastTargetHitTimestamp > 0 ? currentTime - lastTargetHitTimestamp : 0;
@@ -109,6 +113,8 @@ export default function Home() {
   };
 
   // when u hit a target
+  //TO LINK WITH ITEM BUFF 
+  //+x coin on hit
   const onTargetHit = (targetID) => {
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
@@ -117,6 +123,8 @@ export default function Home() {
   };
 
   // target miss penalty
+  //TO LINK WITH ITEM BUFF
+  //decrease penalties
   const onTargetMiss = () => {
     setCoin(prevCoin => Math.max(0, prevCoin - 1)); // remove 1 coin
     setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 2000)); //lower coin multiplier by 2s
@@ -131,7 +139,6 @@ export default function Home() {
   const applyPurchasedItem = (buff) => {
     switch (buff) {
       case '+1 target':
-        console.log("Adding target");
         addTarget();
         break;
       case '-10% combo decrease':
