@@ -304,9 +304,10 @@ export default function Home() {
         </div>
 
         {/* Target hit counter */}
-        <div className="absolute top-[3vh] left-1/2 transform -translate-x-1/2 text-center text-[10vh]">
+        <div className="absolute top-[3vh] right-[2vw] md:left-1/2 md:-translate-x-1/2 md:text-center text-[10vh]">
           {targetHitsCount}
         </div>
+
 
         {/* Coin counter */}
         <div className="absolute top-[5vh] left-[2vw] flex items-center">
