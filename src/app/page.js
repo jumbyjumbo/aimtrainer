@@ -197,7 +197,7 @@ export default function Home() {
     setTargetPositions(targetPositions.map(() => generatePosition()));
     setTimeout(() => {
       setIsLoading(false);
-    }, 200); // 200ms delay
+    }, 500); // 200ms delay
   }, []);
 
   // space bar input logic (press or hold to open shop)
