@@ -251,7 +251,7 @@ export default function Home() {
   // loading screen
   if (isLoading) {
     return <div className="bg-blue-500 font-bold h-screen w-screen overflow-hidden" >
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-[10vw] md:text-[20vh]">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-[10vh] md:text-[20vh]">
         AIM TRAINER
       </div>
     </div>;
