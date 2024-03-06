@@ -25,7 +25,7 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: Math.E },
+    { id: 0, buff: '+1 target', baseCost: 0.0, owned: 0, growthRate: Math.E },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: Math.E },
     { id: 2, buff: '+1 max combo', baseCost: 1, owned: 0, growthRate: 1.07 },
     { id: 3, buff: '+10% target size', baseCost: 11, owned: 0, growthRate: Math.E },
@@ -35,6 +35,17 @@ export default function Home() {
     { id: 7, buff: '+100% speed reward', baseCost: 10000, owned: 0, growthRate: 1.07 },
     // Add more store items here...
   ]);
+
+
+  // New state to track if the player can afford any shop item
+  const [canAfford, setCanAfford] = useState(false);
+
+  // Update canAfford state whenever coins or storeItems change
+  useEffect(() => {
+    const affordable = storeItems.some(item => Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
+    setCanAfford(affordable);
+  }, [Coin, storeItems]);
+
 
 
 
@@ -61,27 +72,6 @@ export default function Home() {
       setTargetPositions(targetPositions.slice(0, -1));
     }
   };
-
-  // input event listener
-  useEffect(() => {
-    const handleKeyPress = (event) => {
-      if (event.key === 't' || event.key === 'T') {
-        addTarget();
-      }
-      if (event.key === 'g' || event.key === 'G') {
-        removeTarget();
-      }
-      // Toggle store on space bar press
-      if (event.key === ' ' || event.code === 'Space') {
-        setIsCoinStoreOpen((previsCoinStoreOpen) => !previsCoinStoreOpen);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-
-    // Cleanup the event listener on component unmount
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [targetPositions]);
 
   // regenerate position for a single target
   const regeneratePosition = (targetID) => {
@@ -141,6 +131,7 @@ export default function Home() {
   const applyPurchasedItem = (buff) => {
     switch (buff) {
       case '+1 target':
+        console.log("Adding target");
         addTarget();
         break;
       case '-10% combo decrease':
@@ -167,8 +158,6 @@ export default function Home() {
     }
   };
 
-
-
   // Function to purchase an item from the store
   const purchaseItem = (itemId) => {
     const itemIndex = storeItems.findIndex(item => item.id === itemId);
@@ -182,7 +171,7 @@ export default function Home() {
           // Apply the purchased item
           if (index === itemIndex) {
             // Apply the effects of the purchased item based on its description
-            applyPurchasedItem(item.description);
+            applyPurchasedItem(item.buff);
             return { ...currentItem, owned: currentItem.owned + 1 };
           }
           return currentItem;
@@ -193,12 +182,63 @@ export default function Home() {
   };
 
 
+
+
+
   // on load function
   useEffect(() => {
     setTargetPositions(targetPositions.map(() => generatePosition()));
     setTimeout(() => {
       setIsLoading(false);
     }, 200); // 200ms delay
+  }, []);
+
+  // space bar input logic (press or hold to open shop)
+  useEffect(() => {
+    let timer = null;
+    let toggleMode = true; // Initially, allow toggling.
+    let holdMode = false; // Initially, not in hold mode.
+
+    const handleKeyDown = (event) => {
+      if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault(); // Prevent default behavior (e.g., page scrolling)
+        if (toggleMode) {
+          // If in toggle mode, open the shop and prepare to check for holding.
+          setIsCoinStoreOpen(prevIsCoinStoreOpen => !prevIsCoinStoreOpen);
+          toggleMode = false; // Disable toggle mode to prevent toggling when holding.
+
+          // Start a timer to check for holding.
+          timer = setTimeout(() => {
+            if (!holdMode) { // After X time in ms, if not already in hold mode, enable it.
+              holdMode = true;
+              toggleMode = false;
+            }
+          }, 100);
+        }
+      }
+    };
+
+    const handleKeyUp = (event) => {
+      if (event.key === ' ' || event.code === 'Space') {
+        clearTimeout(timer); // Stop the timer regardless of whether it was a tap or hold.
+        if (holdMode) {
+          // If it was a hold, close the shop and reset modes.
+          setIsCoinStoreOpen(false);
+          holdMode = false;
+        }
+        toggleMode = true; // Re-enable toggle mode after releasing the key.
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    // Cleanup function to remove event listeners
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, []);
 
   // loading screen
@@ -234,13 +274,14 @@ export default function Home() {
 
       { /* UI  */}
       <div className="pointer-events-none">
-        { /* press space bar to open shop indicator  */}
-        <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center ">
-          <img src="/spacebarwidenopadding.png" alt="Open Shop" style={{ width: '14vh', height: '14vh' }} />
-          <div style={{ width: '1vw' }}></div>
-          <span>SHOP</span>
-        </div>
-
+        { /* hold space bar to open shop indicator  */}
+        {canAfford && (
+          <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center ">
+            <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
+            <div className="w-[0.5vw]"></div>
+            <span>to shop</span>
+          </div>
+        )}
         {/* coin combo multiplier progress bar */}
         <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#F89414] bg-opacity-60 flex items-center">
           <div className="h-full border-x-[3px] border-black bg-[#F89414]" style={{
@@ -249,8 +290,9 @@ export default function Home() {
           {/* Display current coin combo multiplier */}
           {coinComboMultiplier > 0 && (
             <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
-              <span className="text-[3vh]">COMBO x{(coinComboMultiplier / 1000).toFixed(2)}</span>
+              <span className="text-[3vh]">combo <span style={{ textTransform: 'lowercase' }}>x</span>{(coinComboMultiplier / 1000).toFixed(2)}</span>
             </div>
+
           )}
         </div>
 
@@ -275,16 +317,18 @@ export default function Home() {
       {isCoinStoreOpen && (
         <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-400 flex flex-col bg-opacity-80">
           {/* "UPGRADE" text section */}
-          <div className="bg-opacity-85 bg-blue-400 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">STORE</div>
+          <div className="bg-opacity-85 bg-blue-400 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">
+            shop
+          </div>
           {/* Grid section */}
           <div className="grid grid-cols-5 grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
             {storeItems.map((item, index) => (
               <div
                 key={item.id}
-                className="flex flex-col bg-green-200 px-[1vw] pt-[5vh] bg-opacity-70 border-[3px] border-black"
+                className="flex flex-col bg-green-200 px-[1vw] pt-[5vh] bg-opacity-70 border-[3px] border-black justify-center items-center"
                 onMouseDown={() => purchaseItem(item.id)}
               >
-                <div className="flex-1 text-[4vh] self-center">{item.buff}</div>
+                <div className="flex-1 text-[3vh] justify-center self-center">{item.buff}</div>
                 {/* Item cost */}
                 <div className="flex-1 flex items-center">
                   <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
