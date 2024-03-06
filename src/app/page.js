@@ -220,7 +220,7 @@ export default function Home() {
               holdMode = true;
               toggleMode = false;
             }
-          }, 100);
+          }, 150);
         }
       }
     };
@@ -316,9 +316,7 @@ export default function Home() {
             {Coin.toFixed(5)}
           </div>
         </div>
-
       </div>
-
 
       {/* coin store */}
       {isCoinStoreOpen && (
@@ -329,21 +327,25 @@ export default function Home() {
           </div>
           {/* Grid section */}
           <div className="grid grid-cols-5 grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
-            {storeItems.map((item, index) => (
-              <div
-                key={item.id}
-                className="flex flex-col bg-green-200 px-[1vw] pt-[5vh] bg-opacity-70 border-[3px] border-black justify-center items-center"
-                onMouseDown={() => purchaseItem(item.id)}
-              >
-                <div className="flex-1 text-[3vh] justify-center self-center">{item.buff}</div>
-                {/* Item cost */}
-                <div className="flex-1 flex items-center">
-                  <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
-                  <div style={{ width: '1vw' }}></div>
-                  <span>{calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned)}</span>
+            {storeItems.map((item, index) => {
+              // Determine if the current item can be afforded
+              const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
+
+              return (
+                <div
+                  key={item.id}
+                  className={`flex flex-col bg-green-200 px-[1vw] pt-[5vh] bg-opacity-70 border-[3px] border-black justify-center items-center ${!affordable ? "opacity-40" : ""}`}
+                  onMouseDown={() => affordable && purchaseItem(item.id)}
+                >
+                  <div className="flex-1 text-[3vh] text-center">{item.buff}</div>
+                  {/* Item cost */}
+                  <div className="flex-1 flex items-center justify-center mt-2">
+                    <img src="/btclogo.png" alt="BTC Logo" className="w-[5vh] h-[5vh] border-[3px] border-black rounded-full" />
+                    <span className="ml-2">{calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned)}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
