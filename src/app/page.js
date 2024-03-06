@@ -281,7 +281,7 @@ export default function Home() {
 
       { /* UI  */}
       <div className="pointer-events-none">
-        { /* hold space bar to open shop indicator  */}
+        { /* hold space bar to open shop indicator when item is affordable */}
         {canAfford && (
           <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center ">
             <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
@@ -289,9 +289,10 @@ export default function Home() {
             <span>to shop</span>
           </div>
         )}
+
         {/* coin combo multiplier progress bar */}
         <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#F89414] bg-opacity-60 flex items-center">
-          <div className="h-full border-x-[3px] border-black bg-[#F89414]" style={{
+          <div className={`h-full  border-black bg-[#F89414] ${coinComboMultiplier == 0 ? '' : 'border-r-[3px]'} `} style={{
             width: `${(coinComboMultiplier / 10000) * 100}%`,
           }}></div>
           {/* Display current coin combo multiplier */}
@@ -299,7 +300,6 @@ export default function Home() {
             <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
               <span className="text-[3vh]">combo <span style={{ textTransform: 'lowercase' }}>x</span>{(coinComboMultiplier / 1000).toFixed(2)}</span>
             </div>
-
           )}
         </div>
 

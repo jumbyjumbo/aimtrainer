@@ -15,7 +15,6 @@ module.exports = {
       fontFamily: {
         helvetica: ['helvetica', 'sans-serif'],
       },
-
     },
   },
   plugins: [],
