@@ -236,8 +236,8 @@ export default function Home() {
       <div className="pointer-events-none">
         { /* press space bar to open shop indicator  */}
         <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center ">
-          <img src="/spacebaricon.png" alt="Open Shop" style={{ width: '8vh', height: '8vh' }} />
-          <div style={{ width: '0.5vw' }}></div>
+          <img src="/spacebarwidenopadding.png" alt="Open Shop" style={{ width: '14vh', height: '14vh' }} />
+          <div style={{ width: '1vw' }}></div>
           <span>SHOP</span>
         </div>
 
@@ -262,7 +262,7 @@ export default function Home() {
         {/* Coin counter */}
         <div className="absolute top-[5vh] left-[2vw] flex items-center">
           <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
-          <div style={{ width: '0.5vw' }}></div>
+          <div style={{ width: '1vw' }}></div>
           <div>
             {Coin.toFixed(5)}
           </div>
@@ -273,9 +273,9 @@ export default function Home() {
 
       {/* coin store */}
       {isCoinStoreOpen && (
-        <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-500 flex flex-col bg-opacity-80">
+        <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-400 flex flex-col bg-opacity-80">
           {/* "UPGRADE" text section */}
-          <div className="bg-opacity-85 bg-blue-500 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">STORE</div>
+          <div className="bg-opacity-85 bg-blue-400 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">STORE</div>
           {/* Grid section */}
           <div className="grid grid-cols-5 grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
             {storeItems.map((item, index) => (
@@ -288,7 +288,7 @@ export default function Home() {
                 {/* Item cost */}
                 <div className="flex-1 flex items-center">
                   <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
-                  <div style={{ width: '0.5vw' }}></div>
+                  <div style={{ width: '1vw' }}></div>
                   <span>{calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned)}</span>
                 </div>
               </div>
