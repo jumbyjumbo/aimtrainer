@@ -14,6 +14,9 @@ export default function Home() {
   // State to track the amount of Coin the player has
   const [Coin, setCoin] = useState(0);
 
+  //  track ontargethit/miss coin popups
+  const [coinPopups, setCoinPopups] = useState([]);
+
   //  target hit interval in milliseconds
   const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
 
@@ -25,16 +28,21 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: Math.E },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: Math.E },
-    { id: 2, buff: '+1 max combo', baseCost: 1, owned: 0, growthRate: 1.07 },
-    { id: 3, buff: '+10% target size', baseCost: 11, owned: 0, growthRate: Math.E },
-    { id: 4, buff: '+1 coin on hit', baseCost: 99, owned: 0, growthRate: Math.E },
-    { id: 5, buff: '+10% combo growth', baseCost: 1000, owned: 0, growthRate: Math.E },
-    { id: 6, buff: '+10% coins', baseCost: 9999, owned: 0, growthRate: 1.07 },
-    { id: 7, buff: '+100% speed reward', baseCost: 10000, owned: 0, growthRate: 1.07 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 50 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 4 },
+    { id: 2, buff: '+1 max combo', baseCost: 1, owned: 0, growthRate: 2 },
+    { id: 3, buff: '+10% target size', baseCost: 11, owned: 0, growthRate: 4 },
+    { id: 4, buff: '+1 coin on hit', baseCost: 99, owned: 0, growthRate: 4 },
+    { id: 5, buff: '+10% combo growth', baseCost: 1000, owned: 0, growthRate: 4 },
+    { id: 6, buff: '+10% coins', baseCost: 9999, owned: 0, growthRate: 2 },
+    { id: 7, buff: '+100% speed reward', baseCost: 10000, owned: 0, growthRate: 2 },
+    { id: 8, buff: '-10% miss penalty', baseCost: 10000, owned: 0, growthRate: 2 }
     // Add more store items here...
   ]);
+
+  // item 8 state for penalty reduction
+  const [lossPercentage, setLossPercentage] = useState(100);
+
 
 
   // New state to track if the player can afford any shop item
@@ -109,28 +117,63 @@ export default function Home() {
     // base Coin reward based on last target hit interval
     const baseCoinEarned = calculateCoinEarned(timeDifference);
     // bonus coin combo multiplier based on progress bar
-    const finalCoinEarned = baseCoinEarned * Math.max(1, coinComboMultiplier / 1000);
+    const finalCoinEarned = 0.01 * (baseCoinEarned * Math.max(1, coinComboMultiplier / 1000));
+
     // Update Coin state with the final amount earned at 1% of final reward
-    setCoin((prevCoin) => prevCoin + finalCoinEarned * 0.01);
+    setCoin((prevCoin) => prevCoin + finalCoinEarned);
+    return finalCoinEarned;
   };
 
   // when u hit a target
   //TO LINK WITH ITEM BUFF 
   //+x coin on hit
-  const onTargetHit = (targetID) => {
+  const onTargetHit = (targetID, event) => {
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
-    targetHitCoinReward();
+    const finalCoinEarned = targetHitCoinReward();
+    // increase combo multiplier by 1000ms/1x
     setCoinComboMultiplier(prevCoinComboMultiplier => Math.min(10000, prevCoinComboMultiplier + 1000));
+    // Create a popup at the click position with the gained coin amount
+    const newPopup = {
+      id: Date.now(), // Unique ID for the popup
+      x: event.clientX,
+      y: event.clientY,
+      amount: finalCoinEarned.toFixed(2),
+      type: 'gain',
+    };
+    setCoinPopups((prevPopups) => [...prevPopups, newPopup]);
+
+    // Schedule the popup removal after 200ms
+    setTimeout(() => {
+      setCoinPopups((prevPopups) => prevPopups.filter(popup => popup.id !== newPopup.id));
+    }, 500);
   };
 
   // target miss penalty
   //TO LINK WITH ITEM BUFF
   //decrease penalties
-  const onTargetMiss = () => {
-    setCoin(prevCoin => Math.max(0, prevCoin - 1)); // remove 1 coin
-    setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 2000)); //lower coin multiplier by 2s
+  const onTargetMiss = (event) => {
+    // Apply the loss based on the current loss percentage
+    setCoin(prevCoin => Math.max(0, prevCoin * (1 - lossPercentage / 100)));
+    setCoinComboMultiplier(prevCoinComboMultiplier => Math.min(10000, prevCoinComboMultiplier - prevCoinComboMultiplier * (lossPercentage / 100)));
+    // Create a loss popup at the click position
+    const lossPopup = {
+      id: Date.now(),
+      x: event.clientX,
+      y: event.clientY,
+      amount: `-${lossPercentage}%`,
+      type: 'loss',
+    };
+    setCoinPopups((prevPopups) => [...prevPopups, lossPopup]);
+
+    // Schedule the popup removal after 200ms
+    setTimeout(() => {
+      setCoinPopups((prevPopups) => prevPopups.filter(popup => popup.id !== lossPopup.id));
+    }, 1000);
   };
+
+
+
 
   // get current cost of an item depending on how many owned
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
@@ -199,7 +242,7 @@ export default function Home() {
     setTargetPositions(targetPositions.map(() => generatePosition()));
     setTimeout(() => {
       setIsLoading(false);
-    }, 500); // 200ms delay
+    }, 250);
   }, []);
 
   // space bar input logic (press or hold to open shop)
@@ -274,16 +317,16 @@ export default function Home() {
 
   // Main game screen
   return (
-    <main className="select-none bg-gray-200 text-[5vh] font-bold h-screen w-screen overflow-hidden" >
+    <main className="h-screen w-screen overflow-hidden" >
       {/* target spawn canvas */}
-      <div className=" h-screen w-screen absolute" onMouseDown={onTargetMiss} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
+      <div className=" h-screen w-screen absolute" onMouseDown={(e) => { e.stopPropagation(); onTargetMiss(e); }} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
             key={targetID}
             onMouseDown={(e) => {
               e.stopPropagation();
-              onTargetHit(targetID);
+              onTargetHit(targetID, e);
             }}
             className="absolute w-[9vh] h-[9vh] bg-red-600 rounded-full border-[3px] border-black"
             style={{
@@ -331,6 +374,19 @@ export default function Home() {
             {Coin.toFixed(5)}
           </div>
         </div>
+        {/* coin popups */}
+        {coinPopups.map((popup) => (
+          <div
+            key={popup.id}
+            className={`fixed transition-opacity ${popup.type === 'gain' ? 'animate-fadeOutGain text-[#F89414]' : 'animate-fadeOutLoss text-red-500'}`}
+            style={{
+              left: `(${popup.x})px`,
+              top: `${popup.y}px`,
+            }}
+          >
+            {popup.amount > 0 ? `+${popup.amount}` : popup.amount}
+          </div>
+        ))}
       </div>
 
       {/* coin store */}

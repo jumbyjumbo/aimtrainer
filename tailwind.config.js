@@ -7,13 +7,18 @@ module.exports = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-      },
       fontFamily: {
         helvetica: ['helvetica', 'sans-serif'],
+      },
+      keyframes: {
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+      },
+      animation: {
+        fadeOutGain: 'fadeOut 500ms ease-out forwards',
+        fadeOutLoss: 'fadeOut 1000ms ease-out forwards',
       },
     },
   },
