@@ -48,18 +48,6 @@ export default function Home() {
 
 
 
-  useEffect(() => {
-    // Prevent scrolling on mount
-    const preventScroll = (e) => e.preventDefault();
-
-    // Prevent scrolling for touchmove, touchstart, and touchend
-    document.addEventListener('touchmove', preventScroll, { passive: false });
-
-    // Clean up by removing the event listener
-    return () => {
-      document.removeEventListener('touchmove', preventScroll);
-    };
-  }, []);
 
 
 
@@ -259,6 +247,19 @@ export default function Home() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  // prevent scroll on mobile
+  useEffect(() => {
+    // Prevent scrolling on mount
+    const preventScroll = (e) => e.preventDefault();
+    // Prevent scrolling for touchmove, touchstart, and touchend
+    document.addEventListener('touchmove', preventScroll, { passive: false });
+
+    // Clean up by removing the event listener
+    return () => {
+      document.removeEventListener('touchmove', preventScroll);
     };
   }, []);
 
