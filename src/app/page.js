@@ -48,6 +48,20 @@ export default function Home() {
 
 
 
+  useEffect(() => {
+    // Prevent scrolling on mount
+    const preventScroll = (e) => e.preventDefault();
+
+    // Prevent scrolling for touchmove, touchstart, and touchend
+    document.addEventListener('touchmove', preventScroll, { passive: false });
+
+    // Clean up by removing the event listener
+    return () => {
+      document.removeEventListener('touchmove', preventScroll);
+    };
+  }, []);
+
+
 
 
 
