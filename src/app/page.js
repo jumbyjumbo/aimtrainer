@@ -6,7 +6,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(3000).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
@@ -79,10 +79,9 @@ export default function Home() {
 
 
   const generatePosition = () => {
-    // Calculate the actual size increase of the target's radius.
-    const sizeIncrease = baseTargetSize * (targetSizePercentage / 100) / 2;
 
-    const margin = 9 * window.innerHeight / 100;
+    // margin is target size 
+    const margin = baseTargetSize * (targetSizePercentage / 100) / 2;
 
     // Random position adjusted for the margin and size increase.
     const x = Math.random() * (window.innerWidth - margin * 2) + margin;
