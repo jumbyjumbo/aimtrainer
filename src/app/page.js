@@ -24,7 +24,7 @@ export default function Home() {
   const [combo, setCombo] = useState(0);
 
   // Store open state
-  const [isCoinStoreOpen, setIsCoinStoreOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false);
 
   // Store items
   const [storeItems, setStoreItems] = useState([
@@ -61,6 +61,12 @@ export default function Home() {
   // target hit interval speed reward multiplier in %
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(100);
 
+
+
+  // Touch event states
+  const [startTouchY, setStartTouchY] = useState(null);
+
+
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
 
@@ -86,6 +92,37 @@ export default function Home() {
     }
   };
 
+  // Handler for touch start event
+  const handleTouchStart = (e) => {
+    const touchY = e.touches[0].clientY; // Get the starting Y position
+    setStartTouchY(touchY);
+  };
+
+  // Handler for touch end event
+  const handleTouchEnd = (e) => {
+    const touchY = e.changedTouches[0].clientY; // Get the ending Y position
+    if (startTouchY != null) {
+      // Determine swipe direction
+      const deltaY = startTouchY - touchY;
+      if (deltaY > 50) { // Swiped upwards
+        setIsShopOpen(true);
+      } else if (deltaY < -50) { // Swiped downwards
+        setIsShopOpen(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Add touch event listeners
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      // Cleanup event listeners
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [startTouchY]); // Depend on startTouchY to capture changes
 
 
   const generatePosition = () => {
@@ -331,7 +368,7 @@ export default function Home() {
         event.preventDefault(); // Prevent default behavior (e.g., page scrolling)
         if (toggleMode) {
           // If in toggle mode, open the shop and prepare to check for holding.
-          setIsCoinStoreOpen(prevIsCoinStoreOpen => !prevIsCoinStoreOpen);
+          setIsShopOpen(previsShopOpen => !previsShopOpen);
           toggleMode = false; // Disable toggle mode to prevent toggling when holding.
 
           // Start a timer to check for holding.
@@ -351,7 +388,7 @@ export default function Home() {
       if (event.key === ' ' || event.code === 'Space') {
         clearTimeout(timer);
         if (holdMode) {
-          setIsCoinStoreOpen(false);
+          setIsShopOpen(false);
           holdMode = false;
         }
         toggleMode = true;
@@ -429,7 +466,7 @@ export default function Home() {
         </div>
 
         {/* Target hit counter */}
-        <div className="absolute top-[5vh] right-[2vw] md:left-1/2 md:-translate-x-1/2 md:text-center md:text-[10vh]">
+        <div className="absolute top-[3.5vh] right-[2vw] md:left-1/2 md:-translate-x-1/2 md:text-center md:text-[10vh]">
           {targetHitsCount}
         </div>
 
@@ -457,7 +494,7 @@ export default function Home() {
       </div>
 
       {/* coin store */}
-      {isCoinStoreOpen && (
+      {isShopOpen && (
         <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-400 flex flex-col bg-opacity-80">
           {/* shop title */}
           <div className="bg-opacity-85 bg-blue-400 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">
