@@ -455,7 +455,7 @@ export default function Home() {
       <div className="pointer-events-none">
         { /* hold space bar to open shop indicator when item is affordable */}
         {canAfford && (
-          <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+          <div className="text-[3vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
             {isMobile ? (
               // Display text for mobile users
               <span>swipe to shop</span>
