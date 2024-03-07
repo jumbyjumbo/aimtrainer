@@ -6,7 +6,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(3000).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
@@ -28,13 +28,13 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 15 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 0.15 },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 10 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 69 },
-    { id: 4, buff: '+1 coin on hit', baseCost: 11, owned: 0, growthRate: 4 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 0.15 },
+    { id: 4, buff: '+1 coin on hit', baseCost: 11, owned: 0, growthRate: 1.618 },
     { id: 5, buff: '+10% combo growth', baseCost: 99, owned: 0, growthRate: 4 },
-    { id: 6, buff: '+1 max combo', baseCost: 1000, owned: 0, growthRate: 4 },
+    { id: 6, buff: '+1 max combo', baseCost: 1000, owned: 0, growthRate: 15 },
     { id: 7, buff: '+10% coins', baseCost: 9999, owned: 0, growthRate: 2 },
     { id: 8, buff: '+100% speed reward', baseCost: 10000, owned: 0, growthRate: 2 },
   ]);
@@ -47,7 +47,7 @@ export default function Home() {
 
   // Target size in % of base size
   const [targetSizePercentage, setTargetSizePercentage] = useState(100);
-  const baseTargetSize = 8; // Base size in vh
+  const baseTargetSize = 75; // Base size in px
 
 
 
@@ -78,15 +78,26 @@ export default function Home() {
 
 
 
-  //generate new random positions for the targets
   const generatePosition = () => {
-    const dynamicMargin = 100 + (baseTargetSize * (targetSize / 100) - baseTargetSize);
-    return {
-      x: (Math.random() * (window.innerWidth - dynamicMargin * 2) + dynamicMargin / 2),
-      y: (Math.random() * (window.innerHeight - dynamicMargin * 2) + dynamicMargin / 2),
-    };
+    // Calculate the actual size increase of the target's radius.
+    const sizeIncrease = baseTargetSize * (targetSizePercentage / 100) / 2;
+
+    const margin = 9 * window.innerHeight / 100;
+
+    // Random position adjusted for the margin and size increase.
+    const x = Math.random() * (window.innerWidth - margin * 2) + margin;
+    const y = Math.random() * (window.innerHeight - margin * 2) + margin;
+
+    // Return the calculated position.
+    return { x, y };
   };
 
+  // regenerate position for a single target
+  const regeneratePosition = (targetID) => {
+    setTargetPositions(prevPositions =>
+      prevPositions.map((pos, index) => index === targetID ? generatePosition() : pos)
+    );
+  };
 
   // Function to add a new target
   const addTarget = () => {
@@ -105,12 +116,9 @@ export default function Home() {
   };
 
 
-  // regenerate position for a single target
-  const regeneratePosition = (targetID) => {
-    setTargetPositions(prevPositions =>
-      prevPositions.map((pos, index) => index === targetID ? generatePosition() : pos)
-    );
-  };
+
+
+
 
   // Base coin reward function based on time elapsed since last target hit
   const calculateCoinEarned = (timeDifference) => {
@@ -365,10 +373,10 @@ export default function Home() {
             }}
             className="absolute bg-red-600 rounded-full border-[3px] border-black"
             style={{
-              left: `${targetPosition.x}px`,
-              top: `${targetPosition.y}px`,
-              width: `${baseTargetSize * (targetSize / 100)}vh`, // Adjusted size
-              height: `${baseTargetSize * (targetSize / 100)}vh`, // Adjusted size
+              left: `${targetPosition.x - (baseTargetSize * (targetSizePercentage / 100) / 2)}px`,
+              top: `${targetPosition.y - (baseTargetSize * (targetSizePercentage / 100) / 2)}px`,
+              width: `${baseTargetSize * (targetSizePercentage / 100)}px`, // Adjusted size
+              height: `${baseTargetSize * (targetSizePercentage / 100)}px`, // Adjusted size
             }}
           />
         ))}
