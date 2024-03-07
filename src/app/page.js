@@ -12,7 +12,7 @@ export default function Home() {
   const [targetHitsCount, setTargetHitsCount] = useState(0);
 
   // State to track the amount of Coin the player has
-  const [Coin, setCoin] = useState(10000000);
+  const [Coin, setCoin] = useState(0);
 
   //  track ontargethit/miss coin popups
   const [coinPopups, setCoinPopups] = useState([]);
@@ -28,13 +28,13 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 30 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 20 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 15 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 10 },
-    { id: 3, buff: '+1 max combo', baseCost: 6.9, owned: 0, growthRate: 10 },
-    { id: 4, buff: '+10% target size', baseCost: 11, owned: 0, growthRate: 4 },
-    { id: 5, buff: '+1 coin on hit', baseCost: 99, owned: 0, growthRate: 4 },
-    { id: 6, buff: '+10% combo growth', baseCost: 1000, owned: 0, growthRate: 4 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 69 },
+    { id: 4, buff: '+1 coin on hit', baseCost: 11, owned: 0, growthRate: 4 },
+    { id: 5, buff: '+10% combo growth', baseCost: 99, owned: 0, growthRate: 4 },
+    { id: 6, buff: '+1 max combo', baseCost: 1000, owned: 0, growthRate: 4 },
     { id: 7, buff: '+10% coins', baseCost: 9999, owned: 0, growthRate: 2 },
     { id: 8, buff: '+100% speed reward', baseCost: 10000, owned: 0, growthRate: 2 },
   ]);
@@ -42,8 +42,8 @@ export default function Home() {
   // amount of combo and coin loss on miss in %
   const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(100);
 
-  // decrease rate for the combo multiplier
-  const [comboDecreaseRate, setComboDecreaseRate] = useState(20);
+  // Initial decrease rate in percentage per millisecond
+  const [comboDecreaseRate, setComboDecreaseRate] = useState(0.003);
 
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
@@ -114,11 +114,15 @@ export default function Home() {
   // coin combo multiplier decrease (variable rate)
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - comboDecreaseRate));
+      setCoinComboMultiplier(prevCoinComboMultiplier => {
+        // Calculate the new value based on a 0.1% decrease
+        const decreaseAmount = prevCoinComboMultiplier * comboDecreaseRate;
+        return Math.max(0, prevCoinComboMultiplier - decreaseAmount);
+      });
     }, 1);
 
     return () => clearInterval(intervalId);
-  }, [comboDecreaseRate]); // listen to decrease rate changes
+  }, [comboDecreaseRate]); // This effect depends on comboDecreaseRate
 
   // Coin reward per target hit
   //TO LINK WITH ITEM BUFF
@@ -258,7 +262,7 @@ export default function Home() {
 
 
 
-  // on load utilities (generate targets, remove loading screen, prevent scroll on mobile)
+  // on load utilities (prevent scroll on mobile, generate targets, remove loading screen)
   useEffect(() => {
     // Prevent default touch behavior globally
     const preventDefaultTouch = (e) => e.preventDefault();
@@ -377,7 +381,7 @@ export default function Home() {
             width: `${(coinComboMultiplier / 10000) * 100}%`,
           }}></div>
           {/* Display current coin combo multiplier */}
-          {coinComboMultiplier > 0 && (
+          {coinComboMultiplier > 1000 && (
             <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
               <span className="text-[3vh]">combo <span style={{ textTransform: 'lowercase' }}>x</span>{formatAmount(coinComboMultiplier / 1000)}</span>
             </div>
