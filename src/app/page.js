@@ -47,7 +47,11 @@ export default function Home() {
 
   // Target size in % of base size
   const [targetSizePercentage, setTargetSizePercentage] = useState(100);
-  const baseTargetSize = 75; // Base size in px
+  const baseTargetSize = 90; // Base size in px
+
+  // State to track the base coin reward
+  const [baseCoinReward, setBaseCoinReward] = useState(1);
+
 
 
 
@@ -79,17 +83,17 @@ export default function Home() {
 
 
   const generatePosition = () => {
-
-    // margin is target size 
-    const margin = baseTargetSize * (targetSizePercentage / 100) / 2;
+    // Calculate the target's radius.
+    const targetRadius = (baseTargetSize * targetSizePercentage) / 100 / 2;
 
     // Random position adjusted for the margin and size increase.
-    const x = Math.random() * (window.innerWidth - margin * 2) + margin;
-    const y = Math.random() * (window.innerHeight - margin * 2) + margin;
+    const x = Math.random() * (window.innerWidth - targetRadius * 2) + targetRadius;
+    const y = Math.random() * (window.innerHeight - targetRadius * 2) + targetRadius;
 
     // Return the calculated position.
     return { x, y };
   };
+
 
   // regenerate position for a single target
   const regeneratePosition = (targetID) => {
@@ -121,8 +125,10 @@ export default function Home() {
 
   // Base coin reward function based on time elapsed since last target hit
   const calculateCoinEarned = (timeDifference) => {
-    const potentialReward = (1.3 ** ((1000 - timeDifference) * 0.01));
-    return potentialReward < 1 || timeDifference == 0 ? 1 : potentialReward;
+    // Calculate potential reward based on the formula and multiply by baseCoinReward
+    const potentialReward = baseCoinReward * (1.3 ** ((1000 - timeDifference) * 0.01));
+    // Return 1 as the minimum potential reward or the calculated potential reward
+    return potentialReward < 1 || timeDifference === 0 ? baseCoinReward : potentialReward;
   };
 
   // coin combo multiplier decrease (variable rate)
@@ -228,10 +234,10 @@ export default function Home() {
         setMissPenaltyPercentage(prevPercentage => applyMultiplicativeChange(prevPercentage, -0.1)); //log decrease
         break;
       case '+10% target size':
-        setTargetSizePercentage(prevSize => prevSize + 10); //flat increase
+        setTargetSizePercentage(prevSize => prevSize + 10); //base 10% increase
         break;
       case '+1 coin on hit':
-        // Logic for +1 coin on hit
+        setBaseCoinReward(prevCoins => prevCoins + 1); //flat ++
         break;
       case '+10% combo growth':
         // Logic for +10% combo growth
