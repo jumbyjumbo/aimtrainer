@@ -39,10 +39,11 @@ export default function Home() {
     { id: 8, buff: '+100% speed reward', baseCost: 10000, owned: 0, growthRate: 2 },
   ]);
 
-  // item 8 state for penalty reduction
-  const [lossPercentage, setLossPercentage] = useState(100);
+  // amount of combo and coin loss on miss in %
+  const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(100);
 
-
+  // decrease rate for the combo multiplier
+  const [comboDecreaseRate, setComboDecreaseRate] = useState(20);
 
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
@@ -70,6 +71,7 @@ export default function Home() {
   };
 
 
+
   //generate new random positions for the targets
   const generatePosition = () => {
     const margin = 100;
@@ -89,9 +91,10 @@ export default function Home() {
     }
   };
 
-  // Function to reduce the miss penalty
-  const reduceLossPercentage = () => {
-    setLossPercentage(prevLossPercentage => prevLossPercentage - (prevLossPercentage * 0.1));
+  // Generalized function for applying a multiplicative change %
+  const applyMultiplicativeChange = (currentValue, changePercentage = 0.1) => {
+    // For reduction, ie -10%, changePercentage should be negative
+    return currentValue * (1 + changePercentage);
   };
 
 
@@ -108,16 +111,14 @@ export default function Home() {
     return potentialReward < 1 || timeDifference == 0 ? 1 : potentialReward;
   };
 
-  // coin combo multiplier goes down at rate of 15ms/10ms 
-  //TO LINK WITH ITEM BUFF
-  //decrease rate drop off
+  // coin combo multiplier decrease (variable rate)
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - 15));
-    }, 10);
+      setCoinComboMultiplier(prevCoinComboMultiplier => Math.max(0, prevCoinComboMultiplier - comboDecreaseRate));
+    }, 1);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [comboDecreaseRate]); // Ensure effect re-runs if comboDecreaseRate changes
 
   // Coin reward per target hit
   //TO LINK WITH ITEM BUFF
@@ -170,14 +171,14 @@ export default function Home() {
   //decrease penalties
   const onTargetMiss = (event) => {
     // Apply the loss based on the current loss percentage
-    setCoin(prevCoin => Math.max(0, prevCoin * (1 - lossPercentage / 100)));
-    setCoinComboMultiplier(prevCoinComboMultiplier => Math.min(10000, prevCoinComboMultiplier - prevCoinComboMultiplier * (lossPercentage / 100)));
+    setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage / 100)));
+    setCoinComboMultiplier(prevCoinComboMultiplier => Math.min(10000, prevCoinComboMultiplier - prevCoinComboMultiplier * (missPenaltyPercentage / 100)));
     // Create a loss popup at the click position
     const lossPopup = {
       id: Date.now(),
       x: event.clientX,
       y: event.clientY,
-      amount: `-${formatAmount(lossPercentage)}%`,
+      amount: `-${formatAmount(missPenaltyPercentage)}%`,
       type: 'loss',
     };
     setCoinPopups((prevPopups) => [...prevPopups, lossPopup]);
@@ -203,10 +204,10 @@ export default function Home() {
         addTarget();
         break;
       case '-10% combo decrease':
-        // Logic to reduce the combo decrease rate by 10%.
+        setComboDecreaseRate(prevRate => applyMultiplicativeChange(prevRate, -0.1));
         break;
       case '-10% miss penalty':
-        reduceLossPercentage();
+        setMissPenaltyPercentage(prevPercentage => applyMultiplicativeChange(prevPercentage, -0.1));
         break;
       case '+1 max combo':
         // Logic to increase the maximum combo duration by 1 second.
