@@ -118,7 +118,7 @@ export default function Home() {
     }, 1);
 
     return () => clearInterval(intervalId);
-  }, [comboDecreaseRate]); // Ensure effect re-runs if comboDecreaseRate changes
+  }, [comboDecreaseRate]); // listen to decrease rate changes
 
   // Coin reward per target hit
   //TO LINK WITH ITEM BUFF
@@ -255,32 +255,33 @@ export default function Home() {
 
 
 
-  // loading screen
-  if (isLoading) {
-    return <div className="bg-blue-500 font-bold h-screen w-screen overflow-hidden" >
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-[10vh] md:text-[20vh]">
-        AIM TRAINER
-      </div>
-    </div>;
-  }
 
-  // on load utilities (generate targets, remove loading screen, input listeners & logic, prevent scroll on mobile)
+
+
+  // on load utilities (generate targets, remove loading screen, prevent scroll on mobile)
   useEffect(() => {
-
-    // Prevent scrolling for touchmove, touchstart, and touchend
-    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    // Prevent default touch behavior globally
+    const preventDefaultTouch = (e) => e.preventDefault();
+    document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
 
     // Generate initial target positions
     setTargetPositions(targetPositions.map(() => generatePosition()));
 
-    // Remove loading screen after Xms
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 250);
+    // Remove loading screen
+    setIsLoading(false);
 
+    // cleanup / remove event listeners
+    return () => {
+      document.removeEventListener('touchmove', preventDefaultTouch);
+    };
+  }, []);
+
+  // Add event listeners for space bar to open shop
+  useEffect(() => {
     let timer = null;
     let toggleMode = true; // default is toggle mode.
     let holdMode = false;
+
     // keydown events
     const handleKeyDown = (event) => {
       // handkle space bar to shop logic
@@ -323,15 +324,19 @@ export default function Home() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-
-      document.removeEventListener('touchmove', (e) => e.preventDefault());
     };
   }, []);
 
 
 
-
-
+  // loading screen
+  if (isLoading) {
+    return <div className="bg-blue-500 font-bold h-screen w-screen overflow-hidden" >
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-[10vh] md:text-[20vh]">
+        AIM TRAINER
+      </div>
+    </div>;
+  }
 
   // Main game screen
   return (
