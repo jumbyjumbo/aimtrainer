@@ -12,7 +12,7 @@ export default function Home() {
   const [targetHitsCount, setTargetHitsCount] = useState(0);
 
   // State to track the amount of Coin the player has
-  const [Coin, setCoin] = useState(0);
+  const [Coin, setCoin] = useState(9999999);
 
   //  track ontargethit/miss coin popups
   const [coinPopups, setCoinPopups] = useState([]);
@@ -45,6 +45,12 @@ export default function Home() {
   // Initial decrease rate in percentage per millisecond
   const [comboDecreaseRate, setComboDecreaseRate] = useState(0.003);
 
+  // Target size in % of base size
+  const [targetSizePercentage, setTargetSizePercentage] = useState(100);
+  const baseTargetSize = 8; // Base size in vh
+
+
+
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
 
@@ -74,12 +80,13 @@ export default function Home() {
 
   //generate new random positions for the targets
   const generatePosition = () => {
-    const margin = 100;
+    const dynamicMargin = 100 + (baseTargetSize * (targetSize / 100) - baseTargetSize);
     return {
-      x: (Math.random() * (window.innerWidth - margin * 2) + margin / 2),
-      y: (Math.random() * (window.innerHeight - margin * 2) + margin / 2),
+      x: (Math.random() * (window.innerWidth - dynamicMargin * 2) + dynamicMargin / 2),
+      y: (Math.random() * (window.innerHeight - dynamicMargin * 2) + dynamicMargin / 2),
     };
   };
+
 
   // Function to add a new target
   const addTarget = () => {
@@ -208,31 +215,32 @@ export default function Home() {
         addTarget();
         break;
       case '-10% combo decrease':
-        setComboDecreaseRate(prevRate => applyMultiplicativeChange(prevRate, -0.1));
+        setComboDecreaseRate(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
         break;
       case '-10% miss penalty':
-        setMissPenaltyPercentage(prevPercentage => applyMultiplicativeChange(prevPercentage, -0.1));
-        break;
-      case '+1 max combo':
-        // Logic to increase the maximum combo duration by 1 second.
+        setMissPenaltyPercentage(prevPercentage => applyMultiplicativeChange(prevPercentage, -0.1)); //log decrease
         break;
       case '+10% target size':
-        // Logic to increase the target size by 10%.
+        setTargetSizePercentage(prevSize => prevSize + 10); //flat increase
         break;
       case '+1 coin on hit':
-        // Logic to increase coin earned per hit by 1.
+        // Logic for +1 coin on hit
         break;
       case '+10% combo growth':
-        // Logic to increase the combo growth rate by 10%.
+        // Logic for +10% combo growth
+        break;
+      case '+1 max combo':
+        // Logic for +1 max combo
         break;
       case '+10% coins':
-        // Logic to increase the coin earnings by 10%.
+        // Logic for +10% coins
         break;
       case '+100% speed reward':
-        // Logic to double the speed reward.
+        // Logic for +100% speed reward
         break;
     }
   };
+
 
   // Function to purchase an item from the store
   const purchaseItem = (itemId) => {
@@ -355,10 +363,12 @@ export default function Home() {
               e.stopPropagation();
               onTargetHit(targetID, e);
             }}
-            className="absolute w-[9vh] h-[9vh] bg-red-600 rounded-full border-[3px] border-black"
+            className="absolute bg-red-600 rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x}px`,
               top: `${targetPosition.y}px`,
+              width: `${baseTargetSize * (targetSize / 100)}vh`, // Adjusted size
+              height: `${baseTargetSize * (targetSize / 100)}vh`, // Adjusted size
             }}
           />
         ))}
