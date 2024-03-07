@@ -458,15 +458,15 @@ export default function Home() {
           <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
             {isMobile ? (
               // Display text for mobile users
-              <span>swipe</span>
+              <span>swipe to shop</span>
             ) : (
               // Display image and text for non-mobile users
               <>
                 <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
                 <div className="w-[0.5vw]"></div>
+                <span>to shop</span>
               </>
             )}
-            <span>to shop</span>
           </div>
         )}
 
