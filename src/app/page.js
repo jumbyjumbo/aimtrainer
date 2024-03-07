@@ -66,6 +66,16 @@ export default function Home() {
   // Touch event states
   const [startTouchY, setStartTouchY] = useState(null);
 
+  // State to determine if the user is on a mobile device
+  const [isMobile, setIsMobile] = useState(false);
+
+  // check if user is on mobile
+  useEffect(() => {
+    // Detect mobile users
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    setIsMobile(mobile);
+  }, []);
 
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
@@ -445,12 +455,21 @@ export default function Home() {
       <div className="pointer-events-none">
         { /* hold space bar to open shop indicator when item is affordable */}
         {canAfford && (
-          <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center ">
-            <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
-            <div className="w-[0.5vw]"></div>
+          <div className="text-[4vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+            {isMobile ? (
+              // Display text for mobile users
+              <span>swipe</span>
+            ) : (
+              // Display image and text for non-mobile users
+              <>
+                <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
+                <div className="w-[0.5vw]"></div>
+              </>
+            )}
             <span>to shop</span>
           </div>
         )}
+
 
         {/* coin combo multiplier progress bar */}
         <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#F89414] bg-opacity-60 flex items-center">
