@@ -28,7 +28,7 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 15 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: .15 },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
     { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: .30 },
@@ -60,6 +60,16 @@ export default function Home() {
 
   // target hit interval speed reward multiplier in %
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(100);
+
+
+
+
+
+  // xp progress towards next level in %
+  const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
+  const xpNeededToLevelUp = playerProgress.currentLevel ** 2;
+  const xpGainPerHit = 1; // xp gain per target hit
+
 
 
 
@@ -226,6 +236,22 @@ export default function Home() {
 
   // when u hit a target
   const onTargetHit = (targetID, event) => {
+
+    // xp progression on target hit
+    setPlayerProgress(prevProgress => {
+      let newXP = prevProgress.currentXP + xpGainPerHit;
+      let newLevel = prevProgress.currentLevel;
+
+      // check if xp is enough to level up
+      if (newXP >= xpNeededToLevelUp) {
+        newLevel += 1; // level up
+        newXP -= xpNeededToLevelUp; // Reset XP to 0
+      }
+
+      return { currentXP: newXP, currentLevel: newLevel };
+    });
+
+
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
     const finalCoinEarned = targetHitCoinReward();
@@ -427,6 +453,8 @@ export default function Home() {
     </div>;
   }
 
+
+
   // Main game screen
   return (
     <main className="h-screen w-screen overflow-hidden" >
@@ -451,29 +479,11 @@ export default function Home() {
         ))}
       </div>
 
-      { /* UI  */}
+      {/* HUD */}
       <div className="pointer-events-none">
-        { /* hold space bar to open shop indicator when item is affordable */}
-        {canAfford && (
-          <div className="text-[3vh] absolute bottom-[5vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-            {isMobile ? (
-              // Display text for mobile users
-              <span>swipe to shop</span>
-            ) : (
-              // Display image and text for non-mobile users
-              <>
-                <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
-                <div className="w-[0.5vw]"></div>
-                <span>to shop</span>
-              </>
-            )}
-          </div>
-        )}
-
-
         {/* coin combo multiplier progress bar */}
         <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#F89414] bg-opacity-60 flex items-center">
-          <div className={`h-full  border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{
+          <div className={`h-full border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{
             width: `${(combo / maxComboLimit) * 100}%`,
           }}></div>
           {/* Display current coin combo multiplier */}
@@ -497,6 +507,38 @@ export default function Home() {
             {formatAmount(Coin)}
           </div>
         </div>
+
+        { /* can shop indicator */}
+        {canAfford && (
+          <div className="text-[3vh] w-full absolute bottom-[7vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+            {isMobile ? (
+              // Display text for mobile users
+              <span>swipe up to shop</span>
+            ) : (
+              // Display image and text for non-mobile users
+              <>
+                <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
+                <div className="w-[0.5vw]"></div>
+                <span>to shop</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* XP Progress Bar */}
+        <div className="border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[5vh] bg-blue-500 bg-opacity-60 flex items-center">
+          <div className={`h-full border-black bg-blue-500 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / (xpNeededToLevelUp) * 100}%` }}></div>
+          {/* Display level on the far left */}
+          <div className="absolute left-0 h-full flex items-center px-4">
+            <span className="text-[3vh]">level {playerProgress.currentLevel}</span>
+          </div>
+          {/* Display current XP in the middle of the bar */}
+          <div className="absolute left-0 right-0 h-full flex items-center justify-center">
+            <span className="text-[3vh]">{playerProgress.currentXP}/{xpNeededToLevelUp}</span>
+          </div>
+        </div>
+
+
         {/* coin popups */}
         {coinPopups.map((popup) => (
           <div
