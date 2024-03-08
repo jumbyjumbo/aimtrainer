@@ -67,8 +67,8 @@ export default function Home() {
 
   // xp progress towards next level in %
   const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
-  const xpNeededToLevelUp = playerProgress.currentLevel ** 2;
   const xpGainPerHit = 1; // xp gain per target hit
+  const xpNeededToLevelUp = Math.floor(Math.pow(1.5, playerProgress.currentLevel + 3)); // function to calculate level progression
 
 
 
