@@ -447,7 +447,7 @@ export default function Home() {
   // loading screen
   if (isLoading) {
     return <div className="bg-blue-500 font-bold h-screen w-screen overflow-hidden" >
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-[10vh] md:text-[20vh]">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-[10vh] lg:text-[20vh]">
         AIM TRAINER
       </div>
     </div>;
@@ -497,7 +497,7 @@ export default function Home() {
         </div>
 
         {/* Target hit counter */}
-        <div className="absolute top-[3.5vh] right-[2vw] md:left-1/2 md:-translate-x-1/2 md:text-center md:text-[10vh]">
+        <div className="absolute top-[3.5vh] right-[2vw] lg:left-1/2 lg:-translate-x-1/2 lg:text-center lg:text-[10vh]">
           {targetHitsCount}
         </div>
 
@@ -564,7 +564,7 @@ export default function Home() {
             shop
           </div>
           {/* item list */}
-          <div className="grid grid-cols-3 grid-rows-3 md:grid-cols-5 md:grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
+          <div className="grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
@@ -576,10 +576,10 @@ export default function Home() {
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
                   {/* Item description */}
-                  <div className="flex-1 text-[2.5vh] md:text-[3vh] text-center">{item.buff}</div>
+                  <div className="flex-1 text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
                   <div className="flex-1 flex items-center justify-center">
-                    <img src="/btclogo.png" alt="BTC Logo" className="w-[3.5vh] h-[3.5vh] md:w-[5vh] md:h-[5vh] border-[3px] border-black rounded-full" />
+                    <img src="/btclogo.png" alt="BTC Logo" className="w-[3.5vh] h-[3.5vh] lg:w-[5vh] lg:h-[5vh] border-[3px] border-black rounded-full" />
                     <span className="text-[3.5vh] lg:text-[5vh] ml-2">{formatAmount(calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned))}</span>
                   </div>
                 </div>
