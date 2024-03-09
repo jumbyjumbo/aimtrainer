@@ -565,7 +565,7 @@ export default function Home() {
           </div>
 
           {/* item list */}
-          <div className="grid grid-cols-3 grid-rows-3 sm:grid-cols-2 sm:grid-rows-4 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh]  p-[2vh]">
+          <div className="grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh]  p-[2vh]">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
