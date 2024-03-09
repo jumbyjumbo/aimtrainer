@@ -578,8 +578,8 @@ export default function Home() {
                   <div className="flex-1 text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
                   <div className="flex-1 flex items-center justify-center mt-2">
-                    <img src="/btclogo.png" alt="BTC Logo" className="w-[5vh] h-[5vh] border-[3px] border-black rounded-full" />
-                    <span className="ml-2">{formatAmount(calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned))}</span>
+                    <img src="/btclogo.png" alt="BTC Logo" className="w-[2vh] h-[2vh] md:w-[5vh] md:h-[5vh] border-[3px] border-black rounded-full" />
+                    <span className="text-[2vh] md:text-[5vh] ml-[0.5vw]">{formatAmount(calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned))}</span>
                   </div>
                 </div>
               );
