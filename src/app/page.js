@@ -573,7 +573,7 @@ export default function Home() {
               return (
                 <div
                   key={item.id}
-                  className={`flex flex-col bg-green-200 px-[1vw] py-[1vh] bg-opacity-70 border-[3px] border-black justify-center items-center ${!affordable ? "opacity-40" : ""}`}
+                  className={`flex flex-col bg-green-200 mx-[2vw] my-[1vh] bg-opacity-70 border-[3px] border-black justify-center items-center ${!affordable ? "opacity-40" : ""}`}
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
                   {/* Item description */}
