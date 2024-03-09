@@ -565,7 +565,7 @@ export default function Home() {
           </div>
 
           {/* item list */}
-          <div className="grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh]  p-[2vh]">
+          <div className="grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] p-[2vh]">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
@@ -573,7 +573,7 @@ export default function Home() {
               return (
                 <div
                   key={item.id}
-                  className={`flex flex-col bg-green-200 mx-[2vw] my-[1vh] bg-opacity-70 border-[3px] border-black justify-center items-center ${!affordable ? "opacity-40" : ""}`}
+                  className={`flex flex-col bg-green-200 px-[2vw] py-[1vh] bg-opacity-70 border-[3px] border-black justify-center items-center ${!affordable ? "opacity-40" : ""}`}
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
                   {/* Item description */}
