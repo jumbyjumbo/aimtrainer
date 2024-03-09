@@ -575,7 +575,7 @@ export default function Home() {
                   className={`flex flex-col bg-green-200 px-[1vw] pt-[5vh] bg-opacity-70 border-[3px] border-black justify-center items-center ${!affordable ? "opacity-40" : ""}`}
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
-                  <div className="flex-1 text-[3vh] text-center">{item.buff}</div>
+                  <div className="flex-1 text-[2vh] md:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
                   <div className="flex-1 flex items-center justify-center mt-2">
                     <img src="/btclogo.png" alt="BTC Logo" className="w-[3.5vh] h-[3.5vh] md:w-[5vh] md:h-[5vh] border-[3px] border-black rounded-full" />
