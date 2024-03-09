@@ -560,11 +560,12 @@ export default function Home() {
       {isShopOpen && (
         <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-400 flex flex-col bg-opacity-80">
           {/* shop title */}
-          <div className="bg-opacity-85 bg-blue-400 text-center py-[0.25vh] text-[4vh] border-t-[3px] border-b-[3px] border-black">
+          <div className="flex justify-center items-center bg-opacity-85 h-[5.5vh] bg-blue-400 text-center text-[3.5vh] border-t-[3px] border-b-[3px] border-black">
             shop
           </div>
+
           {/* item list */}
-          <div className="grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
+          <div className="grid grid-cols-3 grid-rows-3 sm:grid-cols-2 sm:grid-rows-4 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh]  p-[2vh]">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
