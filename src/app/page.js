@@ -577,9 +577,9 @@ export default function Home() {
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
                   {/* Item description */}
-                  <div className="flex-2 text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
+                  <div className="flex-2 h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
-                  <div className="flex-1 flex items-center justify-center">
+                  <div className="flex-1 h-full flex items-center justify-center">
                     <img src="/btclogo.png" alt="BTC Logo" className="w-[3.5vh] h-[3.5vh] lg:w-[5vh] lg:h-[5vh] border-[3px] border-black rounded-full" />
                     <span className="text-[3.5vh] lg:text-[5vh] ml-2">{formatAmount(calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned))}</span>
                   </div>
