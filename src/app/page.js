@@ -15,7 +15,7 @@ export default function Home() {
   const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
 
   // State to track the amount of Coin the player has
-  const [Coin, setCoin] = useState(9999999);
+  const [Coin, setCoin] = useState(0);
 
   //  track ontargethit/miss coin popups
   const [coinPopups, setCoinPopups] = useState([]);
@@ -28,10 +28,10 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: .15 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 15 },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: .30 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 30 },
     { id: 4, buff: '+1 base coin', baseCost: 11, owned: 0, growthRate: 1.1 },
     { id: 5, buff: '+10% combo growth', baseCost: 99, owned: 0, growthRate: 4 },
     { id: 6, buff: '+1 max combo', baseCost: 1000, owned: 0, growthRate: 15 },
@@ -47,7 +47,7 @@ export default function Home() {
 
   // Target size in % of base size
   const [targetSizePercentage, setTargetSizePercentage] = useState(100);
-  const baseTargetSize = 90; // Base size in px
+  const baseTargetSize = 85; // Base size in px
 
   // State to track the base coin reward
   const [baseCoinReward, setBaseCoinReward] = useState(1);
@@ -68,7 +68,7 @@ export default function Home() {
   // xp progress towards next level in %
   const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
   const xpGainPerHit = 1; // xp gain per target hit
-  const xpNeededToLevelUp = Math.floor(Math.pow(1.5, playerProgress.currentLevel + 3)); // function to calculate level progression
+  const xpNeededToLevelUp = Math.floor(Math.pow(1.5, playerProgress.currentLevel * 2 + 3)); // function to calculate level progression
 
 
 
@@ -455,6 +455,8 @@ export default function Home() {
 
 
 
+
+
   // Main game screen
   return (
     <main className="h-screen w-screen overflow-hidden" >
@@ -562,7 +564,7 @@ export default function Home() {
             shop
           </div>
           {/* item list */}
-          <div className="grid grid-cols-5 grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
+          <div className="grid grid-cols-3 grid-rows-3 md:grid-cols-5 md:grid-rows-3 gap-[2vh] flex-grow p-[2vh]">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
