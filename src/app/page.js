@@ -54,7 +54,7 @@ export default function Home() {
   const [baseCoinReward, setBaseCoinReward] = useState(1);
 
   // combo increase multiplier
-  const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(0.75);
+  const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
 
   // max coin combo limit
   const [maxComboLimit, setMaxComboLimit] = useState(10);
@@ -249,15 +249,19 @@ export default function Home() {
   // when u hit a target
   const onTargetHit = (targetID, event) => {
 
-    // xp progression on target hit
+
+    // Multiply XP gain by the combo multiplier 
+    const xpGained = xpGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
+
+    // Update player progress with the new XP, possibly increasing player level
     setPlayerProgress(prevProgress => {
-      let newXP = prevProgress.currentXP + xpGainPerHit;
+      let newXP = prevProgress.currentXP + xpGained;
       let newLevel = prevProgress.currentLevel;
 
-      // check if xp is enough to level up
-      if (newXP >= xpNeededToLevelUp) {
-        newLevel += 1; // level up
-        newXP -= xpNeededToLevelUp; // Reset XP to 0
+      // Check if XP is enough to level up
+      while (newXP >= xpNeededToLevelUp) {
+        newLevel += 1; // Level up
+        newXP -= xpNeededToLevelUp; // Deduct the XP needed for the level up
       }
 
       return { currentXP: newXP, currentLevel: newLevel };
@@ -295,8 +299,15 @@ export default function Home() {
   // target miss penalty
   const onTargetMiss = (event) => {
     // Apply the loss based on the current loss percentage
+    //coin loss
     setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage / 100)));
+    //combo loss
     setCombo(prevCombo => Math.min(maxComboLimit, prevCombo - prevCombo * (missPenaltyPercentage / 100)));
+    //xp loss
+    setPlayerProgress(prevProgress => {
+      const newXP = Math.max(0, prevProgress.currentXP * (1 - missPenaltyPercentage / 100));
+      return { ...prevProgress, currentXP: newXP };
+    });
 
     // Calculate adjustment towards center for the popup
     const adjustmentX = event.clientX < window.innerWidth / 2 ? 100 : -100;
@@ -554,7 +565,7 @@ export default function Home() {
           </div>
           {/* Display current XP in the middle of the bar */}
           <div className="absolute left-0 right-0 h-full flex items-center justify-center">
-            <span className="text-[3vh]">{playerProgress.currentXP}/{xpNeededToLevelUp}</span>
+            <span className="text-[3vh]">{formatAmount(playerProgress.currentXP)}/{xpNeededToLevelUp}</span>
           </div>
         </div>
 
