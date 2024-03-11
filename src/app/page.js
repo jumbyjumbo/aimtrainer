@@ -20,7 +20,7 @@ export default function Home() {
   //  track ontargethit/miss coin popups
   const [coinPopups, setCoinPopups] = useState([]);
 
-  //  coin combo multiplier progress in milliseconds
+  //  coin combo multiplier in integer
   const [combo, setCombo] = useState(0);
 
   // Store open state
@@ -33,10 +33,11 @@ export default function Home() {
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
     { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 30 },
     { id: 4, buff: '+1 base coin', baseCost: 11, owned: 0, growthRate: 1.1 },
-    { id: 5, buff: '+10% combo growth', baseCost: 99, owned: 0, growthRate: 4 },
-    { id: 6, buff: '+1 max combo', baseCost: 1000, owned: 0, growthRate: 15 },
-    { id: 7, buff: '+10% coins', baseCost: 9999, owned: 0, growthRate: 1.1 },
-    { id: 8, buff: '+100% speed reward', baseCost: 10000, owned: 0, growthRate: 100 },
+    { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 4 },
+    { id: 6, buff: '+1 max combo', baseCost: .99, owned: 0, growthRate: 15 },
+    { id: 7, buff: '+10% coins', baseCost: 333, owned: 0, growthRate: 1.1 },
+    { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 100 },
+    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 50 },
   ]);
 
   // amount of combo and coin loss on miss in %
@@ -52,14 +53,17 @@ export default function Home() {
   // State to track the base coin reward
   const [baseCoinReward, setBaseCoinReward] = useState(1);
 
-  // combo growth rate in % of base growth
-  const [comboGrowthRate, setComboGrowthRate] = useState(100);
+  // combo increase multiplier
+  const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(0.6);
 
   // max coin combo limit
   const [maxComboLimit, setMaxComboLimit] = useState(10);
 
-  // target hit interval speed reward multiplier in %
-  const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(100);
+  // target hit interval speed reward multiplier
+  const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
+
+  // item cost reduction rate
+  const [itemCostReductionRate, setItemCostReductionRate] = useState(1);
 
 
 
@@ -188,7 +192,7 @@ export default function Home() {
   // Base coin reward bonus function based on time elapsed since last target hit
   const calculateIntervalSpeedCoinBonus = (timeDifference) => {
     // Calculate potential reward based on the formula and multiply by baseCoinReward
-    const potentialReward = baseCoinReward * (1.35 ** ((1000 - timeDifference) * 0.01 * (intervalSpeedRewardMultiplier / 100)));
+    const potentialReward = baseCoinReward * (1.35 ** ((1000 - timeDifference) * 0.01 * intervalSpeedRewardMultiplier));
     // Return 1 as the minimum potential reward or the calculated potential reward
     return potentialReward < 1 || timeDifference === 0 ? baseCoinReward : potentialReward;
   };
@@ -255,8 +259,10 @@ export default function Home() {
     regeneratePosition(targetID);
     setTargetHitsCount(prevCount => prevCount + 1);
     const finalCoinEarned = targetHitCoinReward();
-    // Increase combo multiplier by 1 * comboGrowthRate on target hit
-    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 1 * (comboGrowthRate / 100)));
+
+    // Increase combo multiplier by 10% max combo * comboIncreaseMultiplier on target hit
+    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.1 * maxComboLimit * (comboIncreaseMultiplier)));
+
 
 
     // Calculate adjustment towards center for the popup
@@ -308,7 +314,7 @@ export default function Home() {
 
   // get current cost of an item depending on how many owned
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
-    return parseFloat((baseCost * Math.pow(growthRate, owned)));
+    return parseFloat((baseCost * Math.pow(growthRate, owned))) * itemCostReductionRate;
   };
 
   // Function to apply the effects of a purchased item
@@ -329,8 +335,8 @@ export default function Home() {
       case '+1 base coin':
         setBaseCoinReward(prevCoins => prevCoins + 1); //flat ++
         break;
-      case '+10% combo growth':
-        setComboGrowthRate(prevGrowthRate => prevGrowthRate + 10); //base 10% increase
+      case '+10% combo increase':
+        setComboIncreaseMultiplier(prevComboIncreaseMultiplier => prevComboIncreaseMultiplier + 0.1); //base 10% increase
         break;
       case '+1 max combo':
         setMaxComboLimit(prevLimit => prevLimit + 1);
@@ -338,9 +344,13 @@ export default function Home() {
       case '+10% coins':
         // Logic for +10% coins
         break;
-      case '+100% speed reward':
-        setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 100);
+      case '+25% speed reward':
+        setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.4); // flat + 0.4 multiplier
         break;
+      case '-10% item cost':
+        setItemCostReductionRate(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
+        break;
+      default: console.log('Invalid item description:', buff);
     }
   };
 
@@ -399,7 +409,7 @@ export default function Home() {
 
     // keydown events
     const handleKeyDown = (event) => {
-      // handkle space bar to shop logic
+      // handle space bar to shop logic
       if (event.key === ' ' || event.code === 'Space') {
         event.preventDefault(); // Prevent default behavior (e.g., page scrolling)
         if (toggleMode) {
