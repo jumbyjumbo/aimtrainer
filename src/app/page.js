@@ -32,10 +32,10 @@ export default function Home() {
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
     { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 30 },
-    { id: 4, buff: '+1 base coin', baseCost: 11, owned: 0, growthRate: 1.1 },
+    { id: 4, buff: '+1 base coin', baseCost: 11, owned: 0, growthRate: 1.3 },
     { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 4 },
-    { id: 6, buff: '+1 max combo', baseCost: .99, owned: 0, growthRate: 15 },
-    { id: 7, buff: '+10% coins', baseCost: 333, owned: 0, growthRate: 1.1 },
+    { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 13 },
+    { id: 7, buff: '+10% coins', baseCost: 333, owned: 0, growthRate: 7 },
     { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 100 },
     { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 50 },
   ]);
@@ -43,8 +43,8 @@ export default function Home() {
   // amount of combo and coin loss on miss in %
   const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(100);
 
-  // Initial decrease rate in percentage per millisecond
-  const [comboDecreaseRate, setComboDecreaseRate] = useState(0.003);
+  // Initial decrease rate in percentage per milliseconds
+  const [comboDecreaseRate, setComboDecreaseRate] = useState(0.0035);
 
   // Target size in % of base size
   const [targetSizePercentage, setTargetSizePercentage] = useState(100);
@@ -54,16 +54,16 @@ export default function Home() {
   const [baseCoinReward, setBaseCoinReward] = useState(1);
 
   // combo increase multiplier
-  const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(0.6);
+  const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(0.75);
 
   // max coin combo limit
   const [maxComboLimit, setMaxComboLimit] = useState(10);
 
   // target hit interval speed reward multiplier
-  const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
+  const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1.2);
 
   // item cost reduction rate
-  const [itemCostReductionRate, setItemCostReductionRate] = useState(1);
+  const [itemCostReductionMultiplier, setItemCostReductionMultiplier] = useState(1);
 
 
 
@@ -197,18 +197,26 @@ export default function Home() {
     return potentialReward < 1 || timeDifference === 0 ? baseCoinReward : potentialReward;
   };
 
+
+
   // coin combo multiplier decrease (variable rate)
   useEffect(() => {
     const intervalId = setInterval(() => {
       setCombo(prevCombo => {
         // Calculate the new value based on a 0.1% decrease
         const decreaseAmount = prevCombo * comboDecreaseRate;
-        return Math.max(0, prevCombo - decreaseAmount);
+        // Determine if additional decrease is needed (if % fall off becomes insignificant)
+        const additionalDecrease = prevCombo <= (maxComboLimit * 0.033) ? 0.00005 * maxComboLimit : 0;
+        // Apply the calculated decrease and additional decrease
+        return Math.max(0, prevCombo - decreaseAmount - additionalDecrease);
       });
     }, 1);
 
     return () => clearInterval(intervalId);
-  }, [comboDecreaseRate]); // This effect depends on comboDecreaseRate
+  }, [comboDecreaseRate, maxComboLimit]); // Depend on comboDecreaseRate and maxComboLimit
+
+
+
 
   // Coin reward per target hit
   //TO LINK WITH ITEM BUFF
@@ -314,7 +322,7 @@ export default function Home() {
 
   // get current cost of an item depending on how many owned
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
-    return parseFloat((baseCost * Math.pow(growthRate, owned))) * itemCostReductionRate;
+    return parseFloat((baseCost * Math.pow(growthRate, owned))) * itemCostReductionMultiplier;
   };
 
   // Function to apply the effects of a purchased item
@@ -348,7 +356,7 @@ export default function Home() {
         setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.4); // flat + 0.4 multiplier
         break;
       case '-10% item cost':
-        setItemCostReductionRate(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
+        setItemCostReductionMultiplier(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
         break;
       default: console.log('Invalid item description:', buff);
     }
