@@ -36,12 +36,12 @@ export default function Home() {
     { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 4 },
     { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 13 },
     { id: 7, buff: '+10% coins', baseCost: 333, owned: 0, growthRate: 7 },
-    { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 100 },
-    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 50 },
+    { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 30 },
+    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 15 },
   ]);
 
-  // amount of combo and coin loss on miss in %
-  const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(100);
+  // amount of combo and coin loss on miss in percentage
+  const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(1);
 
   // Initial decrease rate in percentage per milliseconds
   const [comboDecreaseRate, setComboDecreaseRate] = useState(0.0035);
@@ -300,12 +300,12 @@ export default function Home() {
   const onTargetMiss = (event) => {
     // Apply the loss based on the current loss percentage
     //coin loss
-    setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage / 100)));
+    setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage)));
     //combo loss
-    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo - prevCombo * (missPenaltyPercentage / 100)));
+    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo - prevCombo * (missPenaltyPercentage)));
     //xp loss
     setPlayerProgress(prevProgress => {
-      const newXP = Math.max(0, prevProgress.currentXP * (1 - missPenaltyPercentage / 100));
+      const newXP = Math.max(0, prevProgress.currentXP * (1 - missPenaltyPercentage));
       return { ...prevProgress, currentXP: newXP };
     });
 
@@ -317,7 +317,7 @@ export default function Home() {
       id: Date.now(),
       x: event.clientX + adjustmentX,
       y: event.clientY + adjustmentY,
-      amount: `-${formatAmount(missPenaltyPercentage)}%`,
+      amount: `-${formatAmount(missPenaltyPercentage * 100)}%`,
       type: 'loss',
     };
     setCoinPopups((prevPopups) => [...prevPopups, lossPopup]);
@@ -606,7 +606,7 @@ export default function Home() {
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
                   {/* Item description */}
-                  <div className="flex-2 h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
+                  <div className="flex-2 flex justify-center items-center h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
                   <div className="flex-1 h-full flex items-center justify-center">
                     <img src="/btclogo.png" alt="BTC Logo" className="w-[3.5vh] h-[3.5vh] lg:w-[5vh] lg:h-[5vh] border-[3px] border-black rounded-full" />
