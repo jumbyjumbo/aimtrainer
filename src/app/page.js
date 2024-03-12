@@ -69,11 +69,13 @@ export default function Home() {
 
 
 
-  // xp progress towards next level in %
+  // XP progress towards next level in %
   const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
-  const xpGainPerHit = 1; // xp gain per target hit
-  const xpNeededToLevelUp = Math.floor(Math.pow(1.5, playerProgress.currentLevel * 2 + 3)); // function to calculate level progression
+  const baseXPGainPerHit = 12; // XP gain per target hit
+  const XPNeededToLevelUp = (level) => Math.floor(Math.pow(1.5, level * 2 + 3)); // function to calculate level progression
 
+  // how many level up upgrades are pending
+  const [levelUpChoicesQueued, setLevelUpChoicesQueued] = useState(0);
 
 
 
@@ -105,6 +107,24 @@ export default function Home() {
 
 
 
+  // level up upgrade pool
+  const levelUpChoices = [
+    {
+      name: "x100 base coin",
+      effect: () => setBaseCoinReward(baseCoinReward * 100)
+    },
+    {
+      name: "Increase Max Combo Limit by 10",
+      effect: () => setMaxComboLimit(maxComboLimit + 10)
+    },
+    {
+      name: "Reduce Combo Decrease Rate to 10% of original value",
+      effect: () => setComboDecreaseRate(comboDecreaseRate * 0.1)
+    }
+  ];
+
+
+
 
 
   // Format any amount to 2 decimal places if fractional and significant
@@ -114,6 +134,12 @@ export default function Home() {
     } else {
       return amount.toFixed(2);
     }
+  };
+
+  // Generalized function for applying a multiplicative change %
+  const applyMultiplicativeChange = (currentValue, changePercentage = 0.1) => {
+    // For reduction, ie -10%, changePercentage should be negative
+    return currentValue * (1 + changePercentage);
   };
 
   // Handler for touch start event
@@ -178,11 +204,7 @@ export default function Home() {
     }
   };
 
-  // Generalized function for applying a multiplicative change %
-  const applyMultiplicativeChange = (currentValue, changePercentage = 0.1) => {
-    // For reduction, ie -10%, changePercentage should be negative
-    return currentValue * (1 + changePercentage);
-  };
+
 
 
 
@@ -251,21 +273,25 @@ export default function Home() {
 
 
     // Multiply XP gain by the combo multiplier 
-    const xpGained = xpGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
+    const XPGained = baseXPGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
 
-    // Update player progress with the new XP, possibly increasing player level
+    // Update player progress and check for level-ups
+    // Update player progress and check for level-ups
     setPlayerProgress(prevProgress => {
-      let newXP = prevProgress.currentXP + xpGained;
+      let newXP = prevProgress.currentXP + XPGained;
       let newLevel = prevProgress.currentLevel;
 
-      // Check if XP is enough to level up
-      while (newXP >= xpNeededToLevelUp) {
-        newLevel += 1; // Level up
-        newXP -= xpNeededToLevelUp; // Deduct the XP needed for the level up
+      // Check for a level-up
+      if (newXP >= XPNeededToLevelUp(newLevel)) {
+        newXP -= XPNeededToLevelUp(newLevel); // Deduct the XP for the next level
+        newLevel++; // Increase level by 1
+        setLevelUpChoicesQueued(prevQueued => prevQueued + 1);
       }
+      console.log("upgradesQueued:", levelUpChoicesQueued);
 
       return { currentXP: newXP, currentLevel: newLevel };
     });
+
 
 
     regeneratePosition(targetID);
@@ -303,7 +329,7 @@ export default function Home() {
     setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage)));
     //combo loss
     setCombo(prevCombo => Math.min(maxComboLimit, prevCombo - prevCombo * (missPenaltyPercentage)));
-    //xp loss
+    //XP loss
     setPlayerProgress(prevProgress => {
       const newXP = Math.max(0, prevProgress.currentXP * (1 - missPenaltyPercentage));
       return { ...prevProgress, currentXP: newXP };
@@ -558,14 +584,14 @@ export default function Home() {
 
         {/* XP Progress Bar */}
         <div className="border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[5vh] bg-blue-500 bg-opacity-60 flex items-center">
-          <div className={`h-full border-black bg-blue-500 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / (xpNeededToLevelUp) * 100}%` }}></div>
+          <div className={`h-full border-black bg-blue-500 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
           {/* Display level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
             <span className="text-[3vh]">level {playerProgress.currentLevel}</span>
           </div>
           {/* Display current XP in the middle of the bar */}
           <div className="absolute left-0 right-0 h-full flex items-center justify-center">
-            <span className="text-[3vh]">{formatAmount(playerProgress.currentXP)}/{xpNeededToLevelUp}</span>
+            <span className="text-[3vh]">{formatAmount(playerProgress.currentXP)}/{XPNeededToLevelUp(playerProgress.currentLevel)}</span>
           </div>
         </div>
 
@@ -615,6 +641,30 @@ export default function Home() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* level up overlay */}
+      {levelUpChoicesQueued > 0 && (
+        <div className="absolute bg-black bg-opacity-60 w-screen h-screen flex justify-center items-center">
+          <div className="flex flex-col justify-center items-center w-full h-[80%] ">
+            <div className="text-gray-200" >level up!</div>
+            <div className="text-gray-200 text-[2.5vh] lg:text-[3.5vh] mb-4">choose an upgrade:</div>
+            <div className="px-[8vw] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
+              {levelUpChoices.map((choice, index) => (
+                <button
+                  key={index}
+                  className="bg-gray-200 px-[4vw] py-[4vh] text-center border-[3px] border-black"
+                  onClick={() => {
+                    choice.effect();
+                    setLevelUpChoicesQueued(prevQueued => prevQueued - 1);
+                  }}
+                >
+                  {choice.name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
