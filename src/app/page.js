@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 
 export default function Home() {
-  // loading state
+
+  // app loading state
   const [isLoading, setIsLoading] = useState(true);
 
   // target positions
@@ -22,6 +23,10 @@ export default function Home() {
 
   //  coin combo multiplier in integer
   const [combo, setCombo] = useState(0);
+
+
+
+
 
   // Store open state
   const [isShopOpen, setIsShopOpen] = useState(false);
@@ -86,7 +91,6 @@ export default function Home() {
     return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(level - 1, exponentBase)));
   };
 
-
   // handle xp gain and level up on target hit
   const addXPAndCheckLevelUp = (XPGained) => {
     setPlayerProgress(prevProgress => {
@@ -106,8 +110,8 @@ export default function Home() {
   };
 
 
-  // Touch event states
-  const [startTouchY, setStartTouchY] = useState(null);
+
+
 
   // State to determine if the user is on a mobile device
   const [isMobile, setIsMobile] = useState(false);
@@ -119,6 +123,46 @@ export default function Home() {
     const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
     setIsMobile(mobile);
   }, []);
+
+  // Touch event states
+  const [startTouchY, setStartTouchY] = useState(null);
+
+  // Handler for touch start event
+  const handleTouchStart = (e) => {
+    const touchY = e.touches[0].clientY; // Get the starting Y position
+    setStartTouchY(touchY);
+  };
+  // Handler for touch end event
+  const handleTouchEnd = (e) => {
+    const touchY = e.changedTouches[0].clientY; // Get the ending Y position
+    if (startTouchY != null) {
+      // Determine swipe direction
+      const deltaY = startTouchY - touchY;
+      if (deltaY > 50) { // Swiped upwards
+        setIsShopOpen(true);
+      } else if (deltaY < -50) { // Swiped downwards
+        setIsShopOpen(false);
+      }
+    }
+  };
+
+  // touch event listeners
+  useEffect(() => {
+    // Add touch event listeners
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      // Cleanup event listeners
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [startTouchY]); // Dependencies
+
+
+
+
+
 
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
@@ -144,16 +188,16 @@ export default function Home() {
       }
     },
     {
-      name: "Increase Max Combo Limit by 10",
+      name: "+1 bot",
       effect: () => {
-        setBaseCoinReward(baseCoinReward * 100);
+
         setIsLevelingUp(false);
       }
     },
     {
-      name: "Reduce Combo Decrease Rate to 10% of original value",
+      name: "+10% bot speed",
       effect: () => {
-        setBaseCoinReward(baseCoinReward * 100);
+
         setIsLevelingUp(false);
       }
     }
@@ -177,39 +221,6 @@ export default function Home() {
     // For reduction, ie -10%, changePercentage should be negative
     return currentValue * (1 + changePercentage);
   };
-
-  // Handler for touch start event
-  const handleTouchStart = (e) => {
-    const touchY = e.touches[0].clientY; // Get the starting Y position
-    setStartTouchY(touchY);
-  };
-
-  // Handler for touch end event
-  const handleTouchEnd = (e) => {
-    const touchY = e.changedTouches[0].clientY; // Get the ending Y position
-    if (startTouchY != null) {
-      // Determine swipe direction
-      const deltaY = startTouchY - touchY;
-      if (deltaY > 50) { // Swiped upwards
-        setIsShopOpen(true);
-      } else if (deltaY < -50) { // Swiped downwards
-        setIsShopOpen(false);
-      }
-    }
-  };
-
-  useEffect(() => {
-    // Add touch event listeners
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      // Cleanup event listeners
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [startTouchY]); // Depend on startTouchY to capture changes
-
 
   const generatePosition = () => {
     // Calculate the target's radius.
@@ -245,8 +256,10 @@ export default function Home() {
 
   // Base coin reward bonus function based on time elapsed since last target hit
   const calculateIntervalSpeedCoinBonus = (timeDifference) => {
+    // Cap the minimum time difference at 50ms
+    const effectiveTimeDifference = Math.max(timeDifference, 50);
     // Calculate potential reward based on the formula and multiply by baseCoinReward
-    const potentialReward = baseCoinReward * (1.35 ** ((1000 - timeDifference) * 0.01 * intervalSpeedRewardMultiplier));
+    const potentialReward = baseCoinReward * (1.35 ** ((1000 - effectiveTimeDifference) * 0.01 * intervalSpeedRewardMultiplier));
     // Return 1 as the minimum potential reward or the calculated potential reward
     return potentialReward < 1 || timeDifference === 0 ? baseCoinReward : potentialReward;
   };
@@ -279,8 +292,6 @@ export default function Home() {
 
 
   // Coin reward per target hit
-  //TO LINK WITH ITEM BUFF
-  //coin boost speed buff
   const targetHitCoinReward = () => {
     const currentTime = Date.now();
     const timeDifference = lastTargetHitTimestamp > 0 ? currentTime - lastTargetHitTimestamp : 0;
@@ -301,10 +312,6 @@ export default function Home() {
     setCoin((prevCoin) => prevCoin + finalCoinEarned);
     return finalCoinEarned;
   };
-
-
-
-
 
   // when u hit a target
   const onTargetHit = (targetID, event) => {
@@ -520,6 +527,60 @@ export default function Home() {
 
 
 
+  // Combo bar color state
+  const [comboBarColor, setComboBarColor] = useState('rgb(248,148,20)'); // Start with orange
+
+  // Function to determine the combo bar color based on timeElapsed
+  const getComboBarColor = (timeElapsed) => {
+    // Calculate the potential reward based on time elapsed
+    const potentialReward = calculateIntervalSpeedCoinBonus(timeElapsed);
+    // Calculate the maximum expected reward for normalization
+    const maxExpectedReward = calculateIntervalSpeedCoinBonus(50); // This uses 50ms as the cap as defined earlier
+
+    // Normalize the potential reward, which is higher for lower timeElapsed values
+    let normalizedFactor = potentialReward / maxExpectedReward;
+
+    // Since we need the color to be more intense (more red) for higher rewards (lower timeElapsed),
+    // we actually want to use the inverse of the normalized factor for our color intensity.
+    normalizedFactor = 1 - normalizedFactor; // Now, 0 means high reward (more red), and 1 means low reward (more orange)
+
+    // Interpolate color based on inverted normalizedFactor
+    // Starting color when normalizedFactor is 0 (high reward): rgb(248, 148, 20) (orange)
+    // Ending color when normalizedFactor is 1 (low reward): rgb(229, 57, 53) (red)
+    const redComponent = 229 + (248 - 229) * normalizedFactor;
+    const greenComponent = 57 + (148 - 57) * normalizedFactor;
+    const blueComponent = 53 + (20 - 53) * normalizedFactor;
+
+    return `rgb(${Math.round(redComponent)}, ${Math.round(greenComponent)}, ${Math.round(blueComponent)})`;
+  };
+
+  // Update the combo bar color based on timeElapsed
+  const updateComboBarColor = () => {
+    const currentTime = Date.now();
+    const timeElapsed = currentTime - lastTargetHitTimestamp;
+
+    // Call your function to determine the combo bar color based on timeElapsed
+    // For example, you can map timeElapsed to a range [0, maximumThreshold] and interpolate the color between red and orange.
+    const comboBarColor = getComboBarColor(timeElapsed);
+
+    // Update your combo bar color state here
+    setComboBarColor(comboBarColor); // Assume you have a state for this
+
+    // Continue the animation loop
+    requestAnimationFrame(updateComboBarColor);
+  };
+
+  // Call the updateComboBarColor function when the component mounts
+  useEffect(() => {
+    // Start the animation loop
+    const animationFrameId = requestAnimationFrame(updateComboBarColor);
+
+    // Cleanup function to cancel the animation frame when the component unmounts
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [lastTargetHitTimestamp]); // Dependencies array
+
+
+
   // loading screen
   if (isLoading) {
     return <div className="bg-blue-500 font-bold h-screen w-screen overflow-hidden" >
@@ -528,9 +589,6 @@ export default function Home() {
       </div>
     </div>;
   }
-
-
-
 
 
   // Main game screen
@@ -546,7 +604,7 @@ export default function Home() {
               e.stopPropagation();
               onTargetHit(targetID, e);
             }}
-            className="absolute bg-red-600 rounded-full border-[3px] border-black"
+            className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * (targetSizePercentage / 100) / 2)}px`,
               top: `${targetPosition.y - (baseTargetSize * (targetSizePercentage / 100) / 2)}px`,
@@ -559,11 +617,11 @@ export default function Home() {
 
       {/* HUD */}
       <div className="pointer-events-none">
+
         {/* coin combo multiplier progress bar */}
-        <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#F89414] bg-opacity-60 flex items-center">
-          <div className={`h-full border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{
-            width: `${(combo / maxComboLimit) * 100}%`,
-          }}></div>
+        <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#f89414] bg-opacity-60 flex items-center">
+          {/* Combo bar filler */}
+          <div className={`combo-bar h-full border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: comboBarColor }}></div>
           {/* Display current coin combo multiplier */}
           {combo > 1 && (
             <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
