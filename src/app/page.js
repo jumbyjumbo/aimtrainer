@@ -60,7 +60,7 @@ export default function Home() {
   const [maxComboLimit, setMaxComboLimit] = useState(10);
 
   // target hit interval speed reward multiplier
-  const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1.2);
+  const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
 
   // item cost reduction rate
   const [itemCostReductionMultiplier, setItemCostReductionMultiplier] = useState(1);
@@ -69,14 +69,41 @@ export default function Home() {
 
 
 
-  // XP progress towards next level in %
+  // XP progress towards next level
   const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
-  const baseXPGainPerHit = 12; // XP gain per target hit
-  const XPNeededToLevelUp = (level) => Math.floor(Math.pow(1.5, level * 2 + 3)); // function to calculate level progression
+  const [baseXPGainPerHit, setBaseXPGainPerHit] = useState(1); // Base XP gain per target hit
 
-  // how many level up upgrades are pending
-  const [levelUpChoicesQueued, setLevelUpChoicesQueued] = useState(0);
+  // Function to calculate the XP needed to level up
+  const XPNeededToLevelUp = (level) => {
+    const baseXP = 50; // XP needed for level 1 to 2
+    const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent level
+    const exponentBase = 1.07; // Determines how much the difficulty increases per level
 
+    if (level === 1) {
+      return baseXP;
+    }
+
+    return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(level - 1, exponentBase)));
+  };
+
+
+  // handle xp gain and level up on target hit
+  const addXPAndCheckLevelUp = (XPGained) => {
+    setPlayerProgress(prevProgress => {
+      let newCurrentXP = prevProgress.currentXP + XPGained;
+      let currentLVL = prevProgress.currentLevel;
+      let XPNeeded = XPNeededToLevelUp(currentLVL);
+
+      // Check if the player has enough XP to level up
+      if (newCurrentXP >= XPNeeded) {
+        newCurrentXP -= XPNeeded;
+        currentLVL++;
+        setIsLevelingUp(true);
+      }
+
+      return { currentXP: newCurrentXP, currentLevel: currentLVL };
+    });
+  };
 
 
   // Touch event states
@@ -103,23 +130,32 @@ export default function Home() {
   }, [Coin, storeItems]);
 
 
-
-
-
+  // game state when leveling up
+  const [isLevelingUp, setIsLevelingUp] = useState(false);
 
   // level up upgrade pool
-  const levelUpChoices = [
+  const levelUpUpgradePool = [
     {
-      name: "x100 base coin",
-      effect: () => setBaseCoinReward(baseCoinReward * 100)
+      //base xpgainperhit++
+      name: "+1 base xp",
+      effect: () => {
+        setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);
+        setIsLevelingUp(false);
+      }
     },
     {
       name: "Increase Max Combo Limit by 10",
-      effect: () => setMaxComboLimit(maxComboLimit + 10)
+      effect: () => {
+        setBaseCoinReward(baseCoinReward * 100);
+        setIsLevelingUp(false);
+      }
     },
     {
       name: "Reduce Combo Decrease Rate to 10% of original value",
-      effect: () => setComboDecreaseRate(comboDecreaseRate * 0.1)
+      effect: () => {
+        setBaseCoinReward(baseCoinReward * 100);
+        setIsLevelingUp(false);
+      }
     }
   ];
 
@@ -207,10 +243,6 @@ export default function Home() {
 
 
 
-
-
-
-
   // Base coin reward bonus function based on time elapsed since last target hit
   const calculateIntervalSpeedCoinBonus = (timeDifference) => {
     // Calculate potential reward based on the formula and multiply by baseCoinReward
@@ -223,19 +255,25 @@ export default function Home() {
 
   // coin combo multiplier decrease (variable rate)
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setCombo(prevCombo => {
-        // Calculate the new value based on a 0.1% decrease
-        const decreaseAmount = prevCombo * comboDecreaseRate;
-        // Determine if additional decrease is needed (if % fall off becomes insignificant)
-        const additionalDecrease = prevCombo <= (maxComboLimit * 0.033) ? 0.00005 * maxComboLimit : 0;
-        // Apply the calculated decrease and additional decrease
-        return Math.max(0, prevCombo - decreaseAmount - additionalDecrease);
-      });
-    }, 1);
+    let intervalId;
 
-    return () => clearInterval(intervalId);
-  }, [comboDecreaseRate, maxComboLimit]); // Depend on comboDecreaseRate and maxComboLimit
+    if (!isLevelingUp) {
+      intervalId = setInterval(() => {
+        setCombo(prevCombo => {
+          const decreaseAmount = prevCombo * comboDecreaseRate;
+          const additionalDecrease = prevCombo <= (maxComboLimit * 0.033) ? 0.00005 * maxComboLimit : 0;
+          return Math.max(0, prevCombo - decreaseAmount - additionalDecrease);
+        });
+      }, 1);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [comboDecreaseRate, maxComboLimit, isLevelingUp]); //dependencies
+
 
 
 
@@ -271,30 +309,9 @@ export default function Home() {
   // when u hit a target
   const onTargetHit = (targetID, event) => {
 
-
-    // Multiply XP gain by the combo multiplier 
-    const XPGained = baseXPGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
-
-    // Update player progress and check for level-ups
-    // Update player progress and check for level-ups
-    setPlayerProgress(prevProgress => {
-      let newXP = prevProgress.currentXP + XPGained;
-      let newLevel = prevProgress.currentLevel;
-
-      // Check for a level-up
-      if (newXP >= XPNeededToLevelUp(newLevel)) {
-        newXP -= XPNeededToLevelUp(newLevel); // Deduct the XP for the next level
-        newLevel++; // Increase level by 1
-        setLevelUpChoicesQueued(prevQueued => prevQueued + 1);
-      }
-      console.log("upgradesQueued:", levelUpChoicesQueued);
-
-      return { currentXP: newXP, currentLevel: newLevel };
-    });
-
-
-
+    // Remove the target and add a new one
     regeneratePosition(targetID);
+    // Increase the target hit counter
     setTargetHitsCount(prevCount => prevCount + 1);
     const finalCoinEarned = targetHitCoinReward();
 
@@ -302,6 +319,10 @@ export default function Home() {
     setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.1 * maxComboLimit * (comboIncreaseMultiplier)));
 
 
+    // Multiply XP gain by the combo multiplier 
+    const XPGained = baseXPGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
+    // Add the XP and check for level up
+    addXPAndCheckLevelUp(XPGained);
 
     // Calculate adjustment towards center for the popup
     const adjustmentX = event.clientX < window.innerWidth / 2 ? 100 : -100;
@@ -646,19 +667,18 @@ export default function Home() {
       )}
 
       {/* level up overlay */}
-      {levelUpChoicesQueued > 0 && (
+      {isLevelingUp && (
         <div className="absolute bg-black bg-opacity-60 w-screen h-screen flex justify-center items-center">
           <div className="flex flex-col justify-center items-center w-full h-[80%] ">
             <div className="text-gray-200" >level up!</div>
             <div className="text-gray-200 text-[2.5vh] lg:text-[3.5vh] mb-4">choose an upgrade:</div>
             <div className="px-[8vw] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
-              {levelUpChoices.map((choice, index) => (
+              {levelUpUpgradePool.map((choice, index) => (
                 <button
                   key={index}
                   className="bg-gray-200 px-[4vw] py-[4vh] text-center border-[3px] border-black"
                   onClick={() => {
                     choice.effect();
-                    setLevelUpChoicesQueued(prevQueued => prevQueued - 1);
                   }}
                 >
                   {choice.name}
