@@ -3,6 +3,12 @@ import React, { useState, useEffect } from 'react';
 
 export default function Home() {
 
+  let hitSound;
+  if (typeof window !== "undefined") {
+    // This checks if the code is running in the browser
+    hitSound = new Audio('/hit.mp3');
+  }
+
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
 
@@ -315,6 +321,17 @@ export default function Home() {
 
   // when u hit a target
   const onTargetHit = (targetID, event) => {
+    // Play the hit sound
+    if (hitSound) {
+      hitSound.pause();
+      hitSound.currentTime = 0;
+      hitSound.play();
+
+      // Stop the sound after 1000ms
+      setTimeout(() => {
+        hitSound.pause();
+      }, 1000);
+    }
 
     // Remove the target and add a new one
     regeneratePosition(targetID);
