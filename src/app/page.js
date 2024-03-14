@@ -619,9 +619,9 @@ export default function Home() {
       <div className="pointer-events-none">
 
         {/* coin combo multiplier progress bar */}
-        <div className="border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] bg-[#f89414] bg-opacity-60 flex items-center">
+        <div className=" border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.6)')}` }}>
           {/* Combo bar filler */}
-          <div className={`combo-bar h-full border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: comboBarColor }}></div>
+          <div className={` h-full border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: comboBarColor }}></div>
           {/* Display current coin combo multiplier */}
           {combo > 1 && (
             <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
