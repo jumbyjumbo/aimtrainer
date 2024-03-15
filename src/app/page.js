@@ -245,6 +245,7 @@ export default function Home() {
     return currentValue * (1 + changePercentage);
   };
 
+  // Function to generate a random position on the screen
   const generatePosition = () => {
     // Calculate the target's radius.
     const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
@@ -534,7 +535,6 @@ export default function Home() {
   useEffect(() => {
     checkForBotHits();
   }, [botPositions]);
-
 
 
 
