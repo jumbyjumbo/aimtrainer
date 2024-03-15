@@ -3,14 +3,29 @@ import React, { useState, useEffect } from 'react';
 
 export default function Home() {
 
-  let hitSound;
-  if (typeof window !== "undefined") {
-    // This checks if the code is running in the browser
-    hitSound = new Audio('/hit.mp3');
-  }
+  // Sound volume state
+  const [volume, setVolume] = useState(0.2);
+
 
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
+
+  // game paused state
+  const [isGamePaused, setIsGamePaused] = useState(false);
+
+  // Store open state
+  const [isShopOpen, setIsShopOpen] = useState(false);
+
+  // game state when leveling up
+  const [isLevelingUp, setIsLevelingUp] = useState(false);
+
+  // menu overlay state
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // pause game when menu or level up overlay is open
+  useEffect(() => {
+    setIsGamePaused(isMenuOpen || isLevelingUp);
+  }, [isMenuOpen, isLevelingUp]);
 
   // target positions
   const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
@@ -33,9 +48,6 @@ export default function Home() {
 
 
 
-
-  // Store open state
-  const [isShopOpen, setIsShopOpen] = useState(false);
 
   // Store items
   const [storeItems, setStoreItems] = useState([
@@ -94,7 +106,7 @@ export default function Home() {
       return baseXP;
     }
 
-    return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(level - 1, exponentBase)));
+    return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(level, exponentBase)));
   };
 
   // handle xp gain and level up on target hit
@@ -180,8 +192,7 @@ export default function Home() {
   }, [Coin, storeItems]);
 
 
-  // game state when leveling up
-  const [isLevelingUp, setIsLevelingUp] = useState(false);
+
 
   // level up upgrade pool
   const levelUpUpgradePool = [
@@ -276,7 +287,7 @@ export default function Home() {
   useEffect(() => {
     let intervalId;
 
-    if (!isLevelingUp) {
+    if (!isGamePaused) {
       intervalId = setInterval(() => {
         setCombo(prevCombo => {
           const decreaseAmount = prevCombo * comboDecreaseRate;
@@ -291,7 +302,7 @@ export default function Home() {
         clearInterval(intervalId);
       }
     };
-  }, [comboDecreaseRate, maxComboLimit, isLevelingUp]); //dependencies
+  }, [comboDecreaseRate, maxComboLimit, isGamePaused]); //dependencies
 
 
 
@@ -319,19 +330,19 @@ export default function Home() {
     return finalCoinEarned;
   };
 
+  // Function to play the hit sound
+  const playHitSound = () => {
+    if (typeof window !== "undefined") {
+      const hitSound = new Audio('/hit.mp3');
+      hitSound.volume = volume;
+      hitSound.play();
+    }
+  };
+
   // when u hit a target
   const onTargetHit = (targetID, event) => {
     // Play the hit sound
-    if (hitSound) {
-      hitSound.pause();
-      hitSound.currentTime = 0;
-      hitSound.play();
-
-      // Stop the sound after 1000ms
-      setTimeout(() => {
-        hitSound.pause();
-      }, 1000);
-    }
+    playHitSound();
 
     // Remove the target and add a new one
     regeneratePosition(targetID);
@@ -542,6 +553,20 @@ export default function Home() {
     };
   }, []);
 
+  // Event listener for Esc key to toggle menu overlay
+  useEffect(() => {
+    const toggleMenu = (event) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(prevState => !prevState);
+      }
+    };
+
+    window.addEventListener('keydown', toggleMenu);
+
+    return () => {
+      window.removeEventListener('keydown', toggleMenu);
+    };
+  }, []);
 
 
   // Combo bar color state
@@ -760,6 +785,29 @@ export default function Home() {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* menu overlay */}
+      {isMenuOpen && (
+        <div className="text-gray-200 absolute bg-black bg-opacity-90 w-screen h-screen flex flex-col justify-center items-center">
+          <div className='text-[10vh] h-[20vh] flex justify-center items-center' >paused</div>
+          {/* sound control */}
+          <div className='h-[80vh] flex flex-row justify-center items-center' >
+            <img src="/volume.png" alt="volume icon" style={{ width: '7vh', height: '7vh' }} />
+            <div className='w-[2vw]'></div>
+            <input
+              id="volume-control"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(e) => setVolume(e.target.value)}
+              className="w-[20vw] h-[1.5vh] bg-gray-200 accent-red-600 outline-none"
+              style={{ backgroundSize: `${volume * 100}% 100%` }}
+            />
           </div>
         </div>
       )}
