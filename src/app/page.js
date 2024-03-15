@@ -549,11 +549,14 @@ export default function Home() {
     setTargetPositions(targetPositions.map(() => generatePosition()));
 
     // Remove loading screen
-    setIsLoading(false);
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
 
     // cleanup / remove event listeners
     return () => {
       document.removeEventListener('touchmove', preventDefaultTouch);
+      clearTimeout(loadingTimeout);
     };
   }, []);
 
