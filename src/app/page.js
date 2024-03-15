@@ -28,7 +28,10 @@ export default function Home() {
   }, [isMenuOpen, isLevelingUp]);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
+
+  // Bot position state
+  const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
   const [targetHitsCount, setTargetHitsCount] = useState(0);
@@ -70,7 +73,7 @@ export default function Home() {
   const [comboDecreaseRate, setComboDecreaseRate] = useState(0.0035);
 
   // Target size in % of base size
-  const [targetSizePercentage, setTargetSizePercentage] = useState(100);
+  const [targetSizeMultiplier, setTargetSizeMultiplier] = useState(1);
   const baseTargetSize = 85; // Base size in px
 
   // State to track the base coin reward
@@ -89,6 +92,9 @@ export default function Home() {
   const [itemCostReductionMultiplier, setItemCostReductionMultiplier] = useState(1);
 
 
+  //  bot speed multiplier
+  const [botSpeedMultiplier, setBotSpeedMultiplier] = useState(1);
+
 
 
 
@@ -98,7 +104,7 @@ export default function Home() {
 
   // Function to calculate the XP needed to level up
   const XPNeededToLevelUp = (level) => {
-    const baseXP = 42; // XP needed for level 1 to 2
+    const baseXP = 50; // XP needed for level 1 to 2
     const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent level
     const exponentBase = 1.07; // Determines how much the difficulty increases per level
 
@@ -200,21 +206,21 @@ export default function Home() {
       //base xpgainperhit++
       name: "+1 base xp",
       effect: () => {
-        setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);
+        setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);  //flat ++
         setIsLevelingUp(false);
       }
     },
     {
       name: "+1 bot",
       effect: () => {
-
+        addBot();
         setIsLevelingUp(false);
       }
     },
     {
       name: "+10% bot speed",
       effect: () => {
-
+        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1); // flat 10% increase
         setIsLevelingUp(false);
       }
     }
@@ -241,7 +247,7 @@ export default function Home() {
 
   const generatePosition = () => {
     // Calculate the target's radius.
-    const targetRadius = (baseTargetSize * targetSizePercentage) / 100 / 2;
+    const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
 
     // Random position adjusted for the margin and size increase.
     const x = Math.random() * (window.innerWidth - targetRadius * 2) + targetRadius;
@@ -268,6 +274,10 @@ export default function Home() {
     }
   };
 
+  // Function to add a new bot
+  const addBot = () => {
+    setBotPositions(prevBotPositions => [...prevBotPositions, generatePosition()]);
+  };
 
 
 
@@ -431,7 +441,7 @@ export default function Home() {
         setMissPenaltyPercentage(prevPercentage => applyMultiplicativeChange(prevPercentage, -0.1)); //log decrease
         break;
       case '+10% target size':
-        setTargetSizePercentage(prevSize => prevSize + 10); //base 10% increase
+        setTargetSizeMultiplier(prevSize => prevSize + 0.1); //base 10% increase
         break;
       case '+1 base coin':
         setBaseCoinReward(prevCoins => prevCoins + 1); //flat ++
@@ -479,6 +489,51 @@ export default function Home() {
     }
   };
 
+
+
+  const doesBotOverlapTarget = (botPos, targetPos) => {
+    const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
+
+    // Calculate the distance from the bot to the target's center
+    const distanceX = Math.abs(botPos.x - targetPos.x);
+    const distanceY = Math.abs(botPos.y - targetPos.y);
+
+    // Check if the bot is within the target's bounds
+    const overlapsX = distanceX <= targetRadius;
+    const overlapsY = distanceY <= targetRadius;
+    return overlapsX && overlapsY;
+  };
+  // Function to check for bot/target overlap 
+  const checkForBotHits = () => {
+    if (botPositions.length > 0 && !isGamePaused) {
+      botPositions.forEach((botPos) => {
+        targetPositions.forEach((targetPos, targetIndex) => {
+          if (doesBotOverlapTarget(botPos, targetPos)) {
+            // Delay the hit to account for transition
+            setTimeout(() => onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y }), 500);
+          }
+        });
+      });
+    }
+  };
+
+  // Effect to update bot positions and check for hits
+  useEffect(() => {
+    if (botPositions.length > 0 && !isGamePaused) {
+      const intervalDelay = 2000 / botSpeedMultiplier;
+      const intervalId = setInterval(() => {
+        setBotPositions(prevBotPositions =>
+          prevBotPositions.map(() => generatePosition())
+        );
+      }, intervalDelay);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [botSpeedMultiplier, botPositions.length, isGamePaused]);
+
+  useEffect(() => {
+    checkForBotHits();
+  }, [botPositions]);
 
 
 
@@ -645,6 +700,7 @@ export default function Home() {
     <main className="h-screen w-screen overflow-hidden" >
       {/* target spawn canvas */}
       <div className=" h-screen w-screen absolute overflow-hidden" onMouseDown={(e) => { e.stopPropagation(); onTargetMiss(e); }} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
+
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
@@ -655,13 +711,29 @@ export default function Home() {
             }}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
-              left: `${targetPosition.x - (baseTargetSize * (targetSizePercentage / 100) / 2)}px`,
-              top: `${targetPosition.y - (baseTargetSize * (targetSizePercentage / 100) / 2)}px`,
-              width: `${baseTargetSize * (targetSizePercentage / 100)}px`, // Adjusted size
-              height: `${baseTargetSize * (targetSizePercentage / 100)}px`, // Adjusted size
+              left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
+              top: `${targetPosition.y - (baseTargetSize * targetSizeMultiplier / 2)}px`,
+              width: `${baseTargetSize * targetSizeMultiplier}px`,
+              height: `${baseTargetSize * targetSizeMultiplier}px`,
             }}
           />
         ))}
+
+        {/* bot instances */}
+        {botPositions.map((botPosition, index) => (
+          <div
+            key={index}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${botPosition.x - 16}px`,
+              top: `${botPosition.y - 16}px`,
+              transition: 'left 250ms ease-out, top 250ms ease-out',
+            }}
+          >
+            <img src="/bot.png" alt="Bot cursor" style={{ width: 32, height: 32 }} />
+          </div>
+        ))}
+
       </div>
 
       {/* HUD */}
@@ -802,9 +874,9 @@ export default function Home() {
           <div className='text-[10vh] h-[20vh] flex justify-center items-center' >paused</div>
           {/* sound control */}
           <div className='h-[80vh] flex flex-row justify-center items-center' >
-            <img src="/volume.png" alt="volume icon" style={{ width: '7vh', height: '7vh' }} />
+            <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
             <div className='w-[2vw]'></div>
-            <input style={{ backgroundSize: `${volume * 100}% 100%` }} className="w-[20vw] h-[1.5vh] bg-gray-200 accent-red-600 outline-none"
+            <input style={{ backgroundSize: `${volume * 100}% 100%` }} className="w-[20vw] h-[2.5vh] bg-gray-200 accent-red-600 outline-none"
               id="volume-control"
               type="range"
               min="0"
