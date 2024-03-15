@@ -804,7 +804,7 @@ export default function Home() {
           <div className='h-[80vh] flex flex-row justify-center items-center' >
             <img src="/volume.png" alt="volume icon" style={{ width: '7vh', height: '7vh' }} />
             <div className='w-[2vw]'></div>
-            <input
+            <input style={{ backgroundSize: `${volume * 100}% 100%` }} className="w-[20vw] h-[1.5vh] bg-gray-200 accent-red-600 outline-none"
               id="volume-control"
               type="range"
               min="0"
@@ -812,8 +812,6 @@ export default function Home() {
               step="0.01"
               value={volume}
               onChange={(e) => setVolume(e.target.value)}
-              className="w-[20vw] h-[1.5vh] bg-gray-200 accent-red-600 outline-none"
-              style={{ backgroundSize: `${volume * 100}% 100%` }}
             />
           </div>
         </div>
