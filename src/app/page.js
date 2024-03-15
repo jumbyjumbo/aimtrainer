@@ -28,7 +28,7 @@ export default function Home() {
   }, [isMenuOpen, isLevelingUp]);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
 
   // Bot position state
   const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
