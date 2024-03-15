@@ -625,12 +625,19 @@ export default function Home() {
 
   // loading screen
   if (isLoading) {
-    return <div className="bg-blue-500 font-bold h-screen w-screen overflow-hidden" >
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-[10vh] lg:text-[20vh]">
-        AIM TRAINER
+    return (
+      <div className="bg-blue-500 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+        {/* game title */}
+        <div className="text-[10vh] lg:text-[20vh] leading-none">
+          aim trainer
+        </div>
+        {/* glyphteck studio */}
+        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studio</div>
       </div>
-    </div>;
+    );
   }
+
+
 
 
   // Main game screen
