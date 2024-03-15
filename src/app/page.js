@@ -98,7 +98,7 @@ export default function Home() {
 
   // Function to calculate the XP needed to level up
   const XPNeededToLevelUp = (level) => {
-    const baseXP = 50; // XP needed for level 1 to 2
+    const baseXP = 42; // XP needed for level 1 to 2
     const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent level
     const exponentBase = 1.07; // Determines how much the difficulty increases per level
 
@@ -333,7 +333,7 @@ export default function Home() {
   // Function to play the hit sound
   const playHitSound = () => {
     if (typeof window !== "undefined") {
-      const hitSound = new Audio('/hit.mp3');
+      const hitSound = new Audio('/hitbubble.mp3');
       hitSound.volume = volume;
       hitSound.play();
     }
@@ -775,7 +775,7 @@ export default function Home() {
 
       {/* level up overlay */}
       {isLevelingUp && (
-        <div className="absolute bg-black bg-opacity-60 w-screen h-screen flex justify-center items-center">
+        <div className="absolute bg-black bg-opacity-85 w-screen h-screen flex justify-center items-center">
           <div className="flex flex-col justify-center items-center w-full h-[80%] ">
             <div className="text-gray-200" >level up!</div>
             <div className="text-gray-200 text-[2.5vh] lg:text-[3.5vh] mb-4">choose an upgrade:</div>
