@@ -864,7 +864,7 @@ export default function Home() {
         .catch(error => console.error('Error autosaving game data:', error));
     };
 
-    const autosaveInterval = setInterval(autosaveAction, 10000); //interval in ms
+    const autosaveInterval = setInterval(autosaveAction, 60000); //interval in ms
     return () => clearInterval(autosaveInterval);
   }, []);
 
