@@ -35,6 +35,14 @@ export default function Home() {
     });
   };
 
+  const applyLevelUpEffectsBasedOnOwned = (updatedLevelUpUpgrades) => {
+    updatedLevelUpUpgrades.forEach(upgrade => {
+      for (let i = 0; i < upgrade.owned; i++) {
+        applyLevelUpUpgrades(upgrade.buff);
+      }
+    });
+  };
+
   // Function to fetch game data from Firestore and set it to the state
   const fetchGameData = async (userId) => {
     const docRef = doc(db, 'players', userId);
@@ -48,16 +56,28 @@ export default function Home() {
       setScore(data.score);
       setCoin(data.coin);
       setPlayerProgress({ currentXP: data.xp, currentLevel: data.level });
+      setVolume(data.volume);
+
+
+      // Update the store items with the loaded data
       const updatedStoreItems = storeItems.map(item => {
         const loadedItem = data.storeItems.find(loadedItem => loadedItem.id === item.id);
         return { ...item, owned: loadedItem ? loadedItem.owned : item.owned };
       });
       setStoreItems(updatedStoreItems);
 
-      setVolume(data.volume);
+      // Update the level up upgrades with the loaded data
+      const updatedLevelUpUpgrades = levelUpUpgrades.map(upgrade => {
+        const loadedUpgrade = data.levelUpUpgrades.find(loadedUpgrade => loadedUpgrade.id === upgrade.id);
+        return { ...upgrade, owned: loadedUpgrade ? loadedUpgrade.owned : 0 };
+      });
+      setLevelUpUpgrades(updatedLevelUpUpgrades);
 
       // Apply the effects of the purchased items based on the loaded data
       applyItemEffectsBasedOnOwned(updatedStoreItems);
+      applyLevelUpEffectsBasedOnOwned(updatedLevelUpUpgrades);
+
+
     } else {
       console.log("no saved data found");
       // no need to change anything, data is already set to default
@@ -303,33 +323,45 @@ export default function Home() {
   }, [Coin, storeItems]);
 
 
+  // Level-Up Upgrades
+  const [levelUpUpgrades, setLevelUpUpgrades] = useState([
+    { id: 0, buff: "+1 base XP", owned: 0 },
+    { id: 1, buff: "+1 bot", owned: 0 },
+    { id: 2, buff: "+10% bot speed", owned: 0 },
+  ]);
 
-
-  // Level up upgrade pool
-  const LevelUpUpgradePool = [
-    {
-      //base XPgainperhit++
-      name: "+1 base XP",
-      effect: () => {
-        setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);  //flat ++
-        setIsLevelingUp(false);
-      }
-    },
-    {
-      name: "+1 bot",
-      effect: () => {
+  // Function to apply the effects of a level-up upgrade
+  const applyLevelUpUpgrades = (buff) => {
+    switch (buff) {
+      case "+1 base XP":
+        setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);
+        break;
+      case "+1 bot":
         addBot();
-        setIsLevelingUp(false);
-      }
-    },
-    {
-      name: "+10% bot speed",
-      effect: () => {
-        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1); // flat 10% increase
-        setIsLevelingUp(false);
-      }
+        break;
+      case "+10% bot speed":
+        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1);
+        break;
+      default:
+        console.log("Invalid upgrade description:", buff);
     }
-  ];
+  };
+
+  // on click effect for level up upgrade
+  const selectLevelUpUpgrade = (selectedUpgrade) => {
+    // Increment 'owned' for the selected upgrade
+    setLevelUpUpgrades(upgrades =>
+      upgrades.map(upgrade =>
+        upgrade.id === selectedUpgrade.id ? { ...upgrade, owned: upgrade.owned + 1 } : upgrade
+      )
+    );
+
+    // Apply the selected upgrade's effect
+    applyLevelUpUpgrades(selectedUpgrade.buff);
+
+    // Close the level-up overlay
+    setIsLevelingUp(false);
+  };
 
 
 
@@ -535,8 +567,8 @@ export default function Home() {
   };
 
   // Function to apply the effects of a purchased item
-  const applyPurchasedItem = (buff) => {
-    switch (buff) {
+  const applyPurchasedItem = (itemBuff) => {
+    switch (itemBuff) {
       case '+1 target':
         addTarget();
         break;
@@ -567,7 +599,7 @@ export default function Home() {
       case '-10% item cost':
         setItemCostReductionMultiplier(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
         break;
-      default: console.log('Invalid item description:', buff);
+      default: console.log('Invalid item description:', itemBuff);
     }
   };
 
@@ -794,6 +826,7 @@ export default function Home() {
   const xpRef = useRef(playerProgress.currentXP);
   const levelRef = useRef(playerProgress.currentLevel);
   const storeItemsRef = useRef(storeItems);
+  const levelUpUpgradesRef = useRef(levelUpUpgrades);
   const volumeRef = useRef(volume);
 
 
@@ -804,9 +837,10 @@ export default function Home() {
     xpRef.current = playerProgress.currentXP;
     levelRef.current = playerProgress.currentLevel;
     storeItemsRef.current = storeItems;
+    levelUpUpgradesRef.current = levelUpUpgrades;
     volumeRef.current = volume;
 
-  }, [Score, Coin, playerProgress, storeItems, volume]);
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume]);
 
 
   //auto save game data on interval
@@ -820,6 +854,7 @@ export default function Home() {
         xp: xpRef.current,
         level: levelRef.current,
         storeItems: storeItemsRef.current.map(item => ({ id: item.id, owned: item.owned })),
+        levelUpUpgrades: levelUpUpgradesRef.current.map(upgrade => ({ id: upgrade.id, owned: upgrade.owned })),
         volume: volumeRef.current,
       };
 
@@ -854,7 +889,7 @@ export default function Home() {
 
 
 
-  // Main game screen
+  // Main game
   return (
     <main className="h-screen w-screen overflow-hidden" >
       {/* target spawn canvas */}
@@ -1011,15 +1046,13 @@ export default function Home() {
             <div className="text-gray-200" >Level up!</div>
             <div className="text-gray-200 text-[2.5vh] lg:text-[3.5vh] mb-4">choose an upgrade:</div>
             <div className="px-[8vw] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
-              {LevelUpUpgradePool.map((choice, index) => (
+              {levelUpUpgrades.map((upgrade, index) => (
                 <button
-                  key={index}
+                  key={upgrade.id}
                   className="bg-gray-200 px-[4vw] py-[4vh] text-center border-[3px] border-black"
-                  onClick={() => {
-                    choice.effect();
-                  }}
+                  onClick={() => selectLevelUpUpgrade(upgrade)}
                 >
-                  {choice.name}
+                  {upgrade.buff}
                 </button>
               ))}
             </div>
