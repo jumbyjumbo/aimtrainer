@@ -875,14 +875,18 @@ export default function Home() {
   // loading screen
   if (isLoading) {
     return (
-      <div className="bg-blue-500 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+      <div className="h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
         {/* game title */}
-        <div className="text-[10vh] lg:text-[20vh] leading-none">
+        <div className="text-[10vh] lg:text-[20vh] leading-none text-center ">
           aim trainer
         </div>
         {/* glyphteck studio */}
         <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studio</div>
+        <video className="z-30 opacity-[30%] min-h-full min-w-full object-cover fixed top-0 left-0 pointer-events-none" autoPlay loop muted playsInline preload="auto">
+          <source src="/tvstatic.mp4" type="video/mp4" />
+        </video>
       </div>
+
     );
   }
 
@@ -946,7 +950,7 @@ export default function Home() {
         </div>
 
         {/* Target hit counter */}
-        <div className="absolute top-[3.5vh] right-[2vw] lg:left-1/2 lg:-translate-x-1/2 lg:text-center lg:text-[10vh]">
+        <div className="absolute lg:top-[3.5vh] top-[5vh] right-[2vw] lg:left-1/2 lg:-translate-x-1/2 lg:text-center lg:text-[10vh]">
           {Score}
         </div>
 
