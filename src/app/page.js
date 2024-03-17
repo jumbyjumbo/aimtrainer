@@ -1,7 +1,112 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from "firebase/app";
+//db
+import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+//auth
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyALhqznQk-LWgFCzjzP3OHfm624ZLFO_cs",
+  authDomain: "aimtrainer-6dec5.firebaseapp.com",
+  projectId: "aimtrainer-6dec5",
+  storageBucket: "aimtrainer-6dec5.appspot.com",
+  messagingSenderId: "281642412398",
+  appId: "1:281642412398:web:5b46861f479c81077c797f",
+  measurementId: "G-G29YT9VKFG"
+};
+// Init firebase
+const app = initializeApp(firebaseConfig);
+// init db
+const db = getFirestore(app);
+// init auth
+const auth = getAuth(app);
+
+
 
 export default function Home() {
+
+  const applyItemEffectsBasedOnOwned = (updatedStoreItems) => {
+    updatedStoreItems.forEach(item => {
+      for (let i = 0; i < item.owned; i++) {
+        applyPurchasedItem(item.buff);
+      }
+    });
+  };
+
+  // Function to fetch game data from Firestore and set it to the state
+  const fetchGameData = async (userId) => {
+    const docRef = doc(db, 'players', userId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      console.log('Game data retrieved:', data);
+
+      // set game data to user's saved data
+      setScore(data.score);
+      setCoin(data.coin);
+      setPlayerProgress({ currentXP: data.xp, currentLevel: data.level });
+      const updatedStoreItems = storeItems.map(item => {
+        const loadedItem = data.storeItems.find(loadedItem => loadedItem.id === item.id);
+        return { ...item, owned: loadedItem ? loadedItem.owned : item.owned };
+      });
+      setStoreItems(updatedStoreItems);
+
+      setVolume(data.volume);
+
+      // Apply the effects of the purchased items based on the loaded data
+      applyItemEffectsBasedOnOwned(updatedStoreItems);
+    } else {
+      console.log("no saved data found");
+      // no need to change anything, data is already set to default
+    }
+  };
+
+  // auto create user on load
+  useEffect(() => {
+    // Check for an authenticated user
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log('User is signed in:', user.uid);
+        // Fetch the user's game data and set it to the state
+        fetchGameData(user.uid);
+      } else {
+        // No user is signed in, sign in anonymously
+        signInAnonymously(auth).then(() => {
+          console.log('Signed in anonymously');
+        }).catch((error) => {
+          console.error('Error signing in anonymously:', error.message);
+        });
+      }
+    });
+
+    return () => unsubscribe(); // Clean up the subscription
+  }, []);
+
+  // Function to save game data to Firestore
+  const autosaveGame = async (gameData) => {
+    if (auth.currentUser) {
+      const docRef = doc(db, 'players', auth.currentUser.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        // Update existing document
+        await updateDoc(docRef, gameData);
+        console.log('Game data updated for user ', auth.currentUser.uid);
+      } else {
+        // Document does not exist, create a new one with gameData
+        await setDoc(docRef, gameData);
+        console.log('New document created with current data for user', auth.currentUser.uid);
+      }
+    }
+  };
+
+
+
+
+
 
   // Sound volume state
   const [volume, setVolume] = useState(0.2);
@@ -16,13 +121,13 @@ export default function Home() {
   // Store open state
   const [isShopOpen, setIsShopOpen] = useState(false);
 
-  // game state when leveling up
+  // game state when Leveling up
   const [isLevelingUp, setIsLevelingUp] = useState(false);
 
   // menu overlay state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // pause game when menu or level up overlay is open
+  // pause game when menu or Level up overlay is open
   useEffect(() => {
     setIsGamePaused(isMenuOpen || isLevelingUp);
   }, [isMenuOpen, isLevelingUp]);
@@ -34,7 +139,7 @@ export default function Home() {
   const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
-  const [targetHitsCount, setTargetHitsCount] = useState(0);
+  const [Score, setScore] = useState(0);
 
   //  target hit interval in milliseconds
   const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
@@ -42,10 +147,10 @@ export default function Home() {
   // State to track the amount of Coin the player has
   const [Coin, setCoin] = useState(0);
 
-  //  track ontargethit/miss coin popups
-  const [coinPopups, setCoinPopups] = useState([]);
+  //  track ontargethit/miss Coin popups
+  const [CoinPopups, setCoinPopups] = useState([]);
 
-  //  coin combo multiplier in integer
+  //  Coin combo multiplier in integer
   const [combo, setCombo] = useState(0);
 
 
@@ -58,15 +163,15 @@ export default function Home() {
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
     { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 30 },
-    { id: 4, buff: '+1 base coin', baseCost: 11, owned: 0, growthRate: 1.3 },
+    { id: 4, buff: '+1 base Coin', baseCost: 11, owned: 0, growthRate: 1.3 },
     { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 4 },
     { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 13 },
-    { id: 7, buff: '+10% coins', baseCost: 333, owned: 0, growthRate: 7 },
+    { id: 7, buff: '+10% Coins', baseCost: 333, owned: 0, growthRate: 7 },
     { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 30 },
     { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 15 },
   ]);
 
-  // amount of combo and coin loss on miss in percentage
+  // amount of combo and Coin loss on miss in percentage
   const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(1);
 
   // Initial decrease rate in percentage per milliseconds
@@ -76,13 +181,13 @@ export default function Home() {
   const [targetSizeMultiplier, setTargetSizeMultiplier] = useState(1);
   const baseTargetSize = 85; // Base size in px
 
-  // State to track the base coin reward
+  // State to track the base Coin reward
   const [baseCoinReward, setBaseCoinReward] = useState(1);
 
   // combo increase multiplier
   const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
 
-  // max coin combo limit
+  // max Coin combo limit
   const [maxComboLimit, setMaxComboLimit] = useState(10);
 
   // target hit interval speed reward multiplier
@@ -98,31 +203,31 @@ export default function Home() {
 
 
 
-  // XP progress towards next level
+  // XP progress towards next Level
   const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
   const [baseXPGainPerHit, setBaseXPGainPerHit] = useState(1); // Base XP gain per target hit
 
-  // Function to calculate the XP needed to level up
-  const XPNeededToLevelUp = (level) => {
-    const baseXP = 50; // XP needed for level 1 to 2
-    const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent level
-    const exponentBase = 1.07; // Determines how much the difficulty increases per level
+  // Function to calculate the XP needed to Level up
+  const XPNeededToLevelUp = (Level) => {
+    const baseXP = 50; // XP needed for Level 1 to 2
+    const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent Level
+    const eXPonentBase = 1.07; // Determines how much the difficulty increases per Level
 
-    if (level === 1) {
+    if (Level === 1) {
       return baseXP;
     }
 
-    return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(level, exponentBase)));
+    return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(Level, eXPonentBase)));
   };
 
-  // handle xp gain and level up on target hit
+  // handle XP gain and Level up on target hit
   const addXPAndCheckLevelUp = (XPGained) => {
     setPlayerProgress(prevProgress => {
       let newCurrentXP = prevProgress.currentXP + XPGained;
       let currentLVL = prevProgress.currentLevel;
       let XPNeeded = XPNeededToLevelUp(currentLVL);
 
-      // Check if the player has enough XP to level up
+      // Check if the player has enough XP to Level up
       if (newCurrentXP >= XPNeeded) {
         newCurrentXP -= XPNeeded;
         currentLVL++;
@@ -191,7 +296,7 @@ export default function Home() {
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
 
-  // Update canAfford state whenever coins or storeItems change
+  // Update canAfford state whenever Coins or storeItems change
   useEffect(() => {
     const affordable = storeItems.some(item => Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
     setCanAfford(affordable);
@@ -200,11 +305,11 @@ export default function Home() {
 
 
 
-  // level up upgrade pool
-  const levelUpUpgradePool = [
+  // Level up upgrade pool
+  const LevelUpUpgradePool = [
     {
-      //base xpgainperhit++
-      name: "+1 base xp",
+      //base XPgainperhit++
+      name: "+1 base XP",
       effect: () => {
         setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);  //flat ++
         setIsLevelingUp(false);
@@ -282,7 +387,7 @@ export default function Home() {
 
 
 
-  // Base coin reward bonus function based on time elapsed since last target hit
+  // Base Coin reward bonus function based on time elapsed since last target hit
   const calculateIntervalSpeedCoinBonus = (timeDifference) => {
     // Cap the minimum time difference at 50ms
     const effectiveTimeDifference = Math.max(timeDifference, 50);
@@ -294,7 +399,7 @@ export default function Home() {
 
 
 
-  // coin combo multiplier decrease (variable rate)
+  // Coin combo multiplier decrease (variable rate)
   useEffect(() => {
     let intervalId;
 
@@ -326,15 +431,15 @@ export default function Home() {
     setLastTargetHitTimestamp(currentTime);
     // base Coin reward based on last target hit interval
     const speedCoinBonus = calculateIntervalSpeedCoinBonus(timeDifference);
-    // bonus coin combo multiplier based on progress bar
+    // bonus Coin combo multiplier based on progress bar
     const comboCoinBonus = 0.01 * (speedCoinBonus * Math.max(1, combo));
 
-    // Find the "+10% coins" item and calculate its bonus
-    const coinBonusItem = storeItems.find(item => item.buff === '+10% coins');
-    const coinBonusMultiplier = 1 + (0.1 * coinBonusItem.owned); // 10% bonus for each owned
+    // Find the "+10% Coins" item and calculate its bonus
+    const CoinBonusItem = storeItems.find(item => item.buff === '+10% Coins');
+    const CoinBonusMultiplier = 1 + (0.1 * CoinBonusItem.owned); // 10% bonus for each owned
 
-    // Apply the "+10% coins" bonus
-    const finalCoinEarned = comboCoinBonus * coinBonusMultiplier;
+    // Apply the "+10% Coins" bonus
+    const finalCoinEarned = comboCoinBonus * CoinBonusMultiplier;
 
     // Update Coin state with the final amount earned
     setCoin((prevCoin) => prevCoin + finalCoinEarned);
@@ -358,7 +463,7 @@ export default function Home() {
     // Remove the target and add a new one
     regeneratePosition(targetID);
     // Increase the target hit counter
-    setTargetHitsCount(prevCount => prevCount + 1);
+    setScore(prevCount => prevCount + 1);
     const finalCoinEarned = targetHitCoinReward();
 
     // Increase combo multiplier by 10% max combo * comboIncreaseMultiplier on target hit
@@ -367,13 +472,13 @@ export default function Home() {
 
     // Multiply XP gain by the combo multiplier 
     const XPGained = baseXPGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
-    // Add the XP and check for level up
+    // Add the XP and check for Level up
     addXPAndCheckLevelUp(XPGained);
 
     // Calculate adjustment towards center for the popup
     const adjustmentX = event.clientX < window.innerWidth / 2 ? 100 : -100;
     const adjustmentY = event.clientY < window.innerHeight / 2 ? 50 : -50;
-    // popup for total coin gain on hit
+    // popup for total Coin gain on hit
     const newPopup = {
       id: Date.now(),
       x: event.clientX + adjustmentX,
@@ -392,7 +497,7 @@ export default function Home() {
   // target miss penalty
   const onTargetMiss = (event) => {
     // Apply the loss based on the current loss percentage
-    //coin loss
+    //Coin loss
     setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage)));
     //combo loss
     setCombo(prevCombo => Math.min(maxComboLimit, prevCombo - prevCombo * (missPenaltyPercentage)));
@@ -444,7 +549,7 @@ export default function Home() {
       case '+10% target size':
         setTargetSizeMultiplier(prevSize => prevSize + 0.1); //base 10% increase
         break;
-      case '+1 base coin':
+      case '+1 base Coin':
         setBaseCoinReward(prevCoins => prevCoins + 1); //flat ++
         break;
       case '+10% combo increase':
@@ -453,8 +558,8 @@ export default function Home() {
       case '+1 max combo':
         setMaxComboLimit(prevLimit => prevLimit + 1);
         break;
-      case '+10% coins':
-        // Logic for +10% coins
+      case '+10% Coins':
+        // Logic for +10% Coins
         break;
       case '+25% speed reward':
         setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.4); // flat + 0.4 multiplier
@@ -634,11 +739,11 @@ export default function Home() {
   const getComboBarColor = (timeElapsed) => {
     // Calculate the potential reward based on time elapsed
     const potentialReward = calculateIntervalSpeedCoinBonus(timeElapsed);
-    // Calculate the maximum expected reward for normalization
-    const maxExpectedReward = calculateIntervalSpeedCoinBonus(50); // This uses 50ms as the cap as defined earlier
+    // Calculate the maximum eXPected reward for normalization
+    const maxEXPectedReward = calculateIntervalSpeedCoinBonus(50); // This uses 50ms as the cap as defined earlier
 
     // Normalize the potential reward, which is higher for lower timeElapsed values
-    let normalizedFactor = potentialReward / maxExpectedReward;
+    let normalizedFactor = potentialReward / maxEXPectedReward;
 
     // Since we need the color to be more intense (more red) for higher rewards (lower timeElapsed),
     // we actually want to use the inverse of the normalized factor for our color intensity.
@@ -678,6 +783,57 @@ export default function Home() {
     // Cleanup function to cancel the animation frame when the component unmounts
     return () => cancelAnimationFrame(animationFrameId);
   }, [lastTargetHitTimestamp]); // Dependencies array
+
+
+
+
+
+  // data refs for game data autosave
+  const scoreRef = useRef(Score);
+  const coinRef = useRef(Coin);
+  const xpRef = useRef(playerProgress.currentXP);
+  const levelRef = useRef(playerProgress.currentLevel);
+  const storeItemsRef = useRef(storeItems);
+  const volumeRef = useRef(volume);
+
+
+  // Update the ref when the state changes
+  useEffect(() => {
+    scoreRef.current = Score;
+    coinRef.current = Coin;
+    xpRef.current = playerProgress.currentXP;
+    levelRef.current = playerProgress.currentLevel;
+    storeItemsRef.current = storeItems;
+    volumeRef.current = volume;
+
+  }, [Score, Coin, playerProgress, storeItems, volume]);
+
+
+  //auto save game data on interval
+  useEffect(() => {
+    const autosaveAction = () => {
+
+      // Create a game data object with the current values of the refs
+      const gameData = {
+        score: scoreRef.current,
+        coin: coinRef.current,
+        xp: xpRef.current,
+        level: levelRef.current,
+        storeItems: storeItemsRef.current.map(item => ({ id: item.id, owned: item.owned })),
+        volume: volumeRef.current,
+      };
+
+      // Autosave the game data
+      autosaveGame(gameData)
+        .then(() => console.log('Autosaved game data at', new Date().toLocaleTimeString()))
+        .catch(error => console.error('Error autosaving game data:', error));
+    };
+
+    const autosaveInterval = setInterval(autosaveAction, 10000); //interval in ms
+    return () => clearInterval(autosaveInterval);
+  }, []);
+
+
 
 
 
@@ -742,11 +898,11 @@ export default function Home() {
       {/* HUD */}
       <div className="pointer-events-none">
 
-        {/* coin combo multiplier progress bar */}
+        {/* Coin combo multiplier progress bar */}
         <div className=" border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.6)')}` }}>
           {/* Combo bar filler */}
           <div className={` h-full border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: comboBarColor }}></div>
-          {/* Display current coin combo multiplier */}
+          {/* Display current Coin combo multiplier */}
           {combo > 1 && (
             <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
               <span className="text-[3vh]">combo <span style={{ textTransform: 'lowercase' }}>x</span>{formatAmount(combo)}</span>
@@ -756,7 +912,7 @@ export default function Home() {
 
         {/* Target hit counter */}
         <div className="absolute top-[3.5vh] right-[2vw] lg:left-1/2 lg:-translate-x-1/2 lg:text-center lg:text-[10vh]">
-          {targetHitsCount}
+          {Score}
         </div>
 
         {/* Coin counter */}
@@ -788,9 +944,9 @@ export default function Home() {
         {/* XP Progress Bar */}
         <div className="border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[5vh] bg-blue-500 bg-opacity-60 flex items-center">
           <div className={`h-full border-black bg-blue-500 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
-          {/* Display level on the far left */}
+          {/* Display Level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
-            <span className="text-[3vh]">level {playerProgress.currentLevel}</span>
+            <span className="text-[3vh]">Level {playerProgress.currentLevel}</span>
           </div>
           {/* Display current XP in the middle of the bar */}
           <div className="absolute left-0 right-0 h-full flex items-center justify-center">
@@ -799,8 +955,8 @@ export default function Home() {
         </div>
 
 
-        {/* coin popups */}
-        {coinPopups.map((popup) => (
+        {/* Coin popups */}
+        {CoinPopups.map((popup) => (
           <div
             key={popup.id}
             className={`fixed transition-opacity ${popup.type === 'gain' ? 'animate-fadeOutGain text-[#F89414]' : 'animate-fadeOutLoss text-red-500'}`}
@@ -814,7 +970,7 @@ export default function Home() {
         ))}
       </div>
 
-      {/* coin store */}
+      {/* Coin store */}
       {isShopOpen && (
         <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-400 flex flex-col bg-opacity-80">
           {/* shop title */}
@@ -848,14 +1004,14 @@ export default function Home() {
         </div>
       )}
 
-      {/* level up overlay */}
+      {/* Level up overlay */}
       {isLevelingUp && (
         <div className="absolute bg-black bg-opacity-85 w-screen h-screen flex justify-center items-center">
           <div className="flex flex-col justify-center items-center w-full h-[80%] ">
-            <div className="text-gray-200" >level up!</div>
+            <div className="text-gray-200" >Level up!</div>
             <div className="text-gray-200 text-[2.5vh] lg:text-[3.5vh] mb-4">choose an upgrade:</div>
             <div className="px-[8vw] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
-              {levelUpUpgradePool.map((choice, index) => (
+              {LevelUpUpgradePool.map((choice, index) => (
                 <button
                   key={index}
                   className="bg-gray-200 px-[4vw] py-[4vh] text-center border-[3px] border-black"
