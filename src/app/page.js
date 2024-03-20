@@ -153,7 +153,7 @@ export default function Home() {
   }, [isMenuOpen, isLevelingUp]);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
 
   // Bot position state
   const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
@@ -179,16 +179,16 @@ export default function Home() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 15 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 30 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 1.5 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.5 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 2 },
     { id: 4, buff: '+1 base Coin', baseCost: 11, owned: 0, growthRate: 1.3 },
-    { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 4 },
-    { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 13 },
-    { id: 7, buff: '+10% Coins', baseCost: 333, owned: 0, growthRate: 7 },
-    { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 30 },
-    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 15 },
+    { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 1.4 },
+    { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 1.7 },
+    { id: 7, buff: '+10% Coins', baseCost: 333, owned: 0, growthRate: 1.7 },
+    { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 2 },
+    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 1.5 },
   ]);
 
   // amount of combo and Coin loss on miss in percentage
@@ -882,7 +882,7 @@ export default function Home() {
         </div>
         {/* glyphteck studio */}
         <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studio</div>
-        <video className="z-30 opacity-[30%] min-h-full min-w-full object-cover fixed top-0 left-0 pointer-events-none" autoPlay loop muted playsInline preload="auto">
+        <video className="z-30 opacity-[30%] min-h-full min-w-full object-cover fixed top-0 left-0" autoPlay loop muted playsInline preload="auto">
           <source src="/tvstatic.mp4" type="video/mp4" />
         </video>
       </div>
@@ -936,11 +936,10 @@ export default function Home() {
 
       {/* HUD */}
       <div className="pointer-events-none">
-
         {/* Coin combo multiplier progress bar */}
-        <div className=" border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.6)')}` }}>
+        <div className="backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}>
           {/* Combo bar filler */}
-          <div className={` h-full border-black bg-[#F89414] ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: comboBarColor }}></div>
+          <div className={`h-full border-black ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}></div>
           {/* Display current Coin combo multiplier */}
           {combo > 1 && (
             <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
@@ -981,8 +980,8 @@ export default function Home() {
         )}
 
         {/* XP Progress Bar */}
-        <div className="border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[5vh] bg-blue-500 bg-opacity-60 flex items-center">
-          <div className={`h-full border-black bg-blue-500 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
+        <div className="backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[5vh] bg-[#076beb] bg-opacity-65 flex items-center">
+          <div className={`h-full border-black bg-[#076beb] bg-opacity-65 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
           {/* Display Level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
             <span className="text-[3vh]">Level {playerProgress.currentLevel}</span>
@@ -1011,11 +1010,7 @@ export default function Home() {
 
       {/* Coin store */}
       {isShopOpen && (
-        <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] bg-blue-400 flex flex-col bg-opacity-80">
-          {/* shop title */}
-          <div className="flex justify-center items-center bg-opacity-85 h-[5.5vh] bg-blue-400 text-center text-[3.5vh] border-t-[3px] border-b-[3px] border-black">
-            shop
-          </div>
+        <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black">
 
           {/* item list */}
           <div className="grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] p-[2vh]">
@@ -1026,7 +1021,7 @@ export default function Home() {
               return (
                 <div
                   key={item.id}
-                  className={`flex flex-col bg-green-200 px-[2vw] py-[1vh] bg-opacity-70 border-[3px] border-black justify-center items-center ${!affordable ? "opacity-40" : ""}`}
+                  className={`flex flex-col bg-white bg-opacity-50 rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center ${!affordable ? "opacity-30" : ""}`}
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
                   {/* Item description */}
@@ -1045,34 +1040,31 @@ export default function Home() {
 
       {/* Level up overlay */}
       {isLevelingUp && (
-        <div className="absolute bg-black bg-opacity-85 w-screen h-screen flex justify-center items-center">
-          <div className="flex flex-col justify-center items-center w-full h-[80%] ">
-            <div className="text-gray-200" >Level up!</div>
-            <div className="text-gray-200 text-[2.5vh] lg:text-[3.5vh] mb-4">choose an upgrade:</div>
-            <div className="px-[8vw] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
-              {levelUpUpgrades.map((upgrade, index) => (
-                <button
-                  key={upgrade.id}
-                  className="bg-gray-200 px-[4vw] py-[4vh] text-center border-[3px] border-black"
-                  onClick={() => selectLevelUpUpgrade(upgrade)}
-                >
-                  {upgrade.buff}
-                </button>
-              ))}
-            </div>
+        <div className="absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
+          <div className='text-[10vh] h-[20vh]' >level up!</div>
+          <div className="px-[8vw] pb-[16vh] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
+            {levelUpUpgrades.map((upgrade, index) => (
+              <div
+                key={upgrade.id}
+                className="bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
+                onClick={() => selectLevelUpUpgrade(upgrade)}
+              >
+                {upgrade.buff}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* menu overlay */}
       {isMenuOpen && (
-        <div className="text-gray-200 absolute bg-black bg-opacity-90 w-screen h-screen flex flex-col justify-center items-center">
-          <div className='text-[10vh] h-[20vh] flex justify-center items-center' >paused</div>
+        <div className=" absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
+          <div className='text-[10vh] h-[20vh] flex justify-center items-center' >aimtrainer</div>
           {/* sound control */}
           <div className='h-[80vh] flex flex-row justify-center items-center' >
             <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
             <div className='w-[2vw]'></div>
-            <input style={{ backgroundSize: `${volume * 100}% 100%` }} className="w-[20vw] h-[2.5vh] bg-gray-200 accent-red-600 outline-none"
+            <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
               id="volume-control"
               type="range"
               min="0"
