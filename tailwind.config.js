@@ -20,6 +20,9 @@ module.exports = {
         fadeOutGain: 'fadeOut 500ms ease-out forwards',
         fadeOutLoss: 'fadeOut 1000ms ease-out forwards',
       },
+      backgroundImage: {
+        'bliss': "url('/bliss.jpg')",
+      },
     },
   },
   plugins: [],

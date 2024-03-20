@@ -131,7 +131,6 @@ export default function Home() {
   // Sound volume state
   const [volume, setVolume] = useState(0.2);
 
-
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
 
@@ -153,7 +152,7 @@ export default function Home() {
   }, [isMenuOpen, isLevelingUp]);
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
 
   // Bot position state
   const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
@@ -172,10 +171,6 @@ export default function Home() {
 
   //  Coin combo multiplier in integer
   const [combo, setCombo] = useState(0);
-
-
-
-
 
   // Store items
   const [storeItems, setStoreItems] = useState([
@@ -216,10 +211,8 @@ export default function Home() {
   // item cost reduction rate
   const [itemCostReductionMultiplier, setItemCostReductionMultiplier] = useState(1);
 
-
   //  bot speed multiplier
   const [botSpeedMultiplier, setBotSpeedMultiplier] = useState(1);
-
 
 
 
@@ -257,8 +250,6 @@ export default function Home() {
       return { currentXP: newCurrentXP, currentLevel: currentLVL };
     });
   };
-
-
 
 
 
@@ -412,11 +403,6 @@ export default function Home() {
     }
   };
 
-  // Function to add a new bot
-  const addBot = () => {
-    setBotPositions(prevBotPositions => [...prevBotPositions, generatePosition()]);
-  };
-
 
 
   // Base Coin reward bonus function based on time elapsed since last target hit
@@ -487,6 +473,34 @@ export default function Home() {
     }
   };
 
+
+  const showPopup = (x, y, amount, type) => {
+    // Calculate adjustment towards center for the popup
+    const adjustmentX = x < window.innerWidth / 2 ? 100 : -100;
+    const adjustmentY = y < window.innerHeight / 2 ? 50 : -50;
+
+    // Create the popup object
+    const newPopup = {
+      id: Date.now(), // Unique ID for the popup
+      x: x + adjustmentX,
+      y: y + adjustmentY,
+      amount: type === 'loss' ? `-${formatAmount(amount)}%` : formatAmount(amount),
+      type: type,
+    };
+
+    // Add the popup to the state
+    setCoinPopups((prevPopups) => [...prevPopups, newPopup]);
+
+    // Set the removal delay based on the popup type
+    const removalDelay = type === 'loss' ? 1000 : 500;
+    // Schedule the popup removal after 500ms
+    setTimeout(() => {
+      setCoinPopups((prevPopups) => prevPopups.filter(popup => popup.id !== newPopup.id));
+    }, removalDelay);
+  };
+
+
+
   // when u hit a target
   const onTargetHit = (targetID, event) => {
     // Play the hit sound
@@ -501,29 +515,13 @@ export default function Home() {
     // Increase combo multiplier by 10% max combo * comboIncreaseMultiplier on target hit
     setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.1 * maxComboLimit * (comboIncreaseMultiplier)));
 
-
     // Multiply XP gain by the combo multiplier 
     const XPGained = baseXPGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
     // Add the XP and check for Level up
     addXPAndCheckLevelUp(XPGained);
 
-    // Calculate adjustment towards center for the popup
-    const adjustmentX = event.clientX < window.innerWidth / 2 ? 100 : -100;
-    const adjustmentY = event.clientY < window.innerHeight / 2 ? 50 : -50;
-    // popup for total Coin gain on hit
-    const newPopup = {
-      id: Date.now(),
-      x: event.clientX + adjustmentX,
-      y: event.clientY + adjustmentY,
-      amount: formatAmount(finalCoinEarned),
-      type: 'gain',
-    };
-    setCoinPopups((prevPopups) => [...prevPopups, newPopup]);
-
-    // Schedule the popup removal after 200ms
-    setTimeout(() => {
-      setCoinPopups((prevPopups) => prevPopups.filter(popup => popup.id !== newPopup.id));
-    }, 500);
+    // Show the Coin gain popup
+    showPopup(event.clientX, event.clientY, finalCoinEarned, 'gain');
   };
 
   // target miss penalty
@@ -539,23 +537,8 @@ export default function Home() {
       return { ...prevProgress, currentXP: newXP };
     });
 
-    // Calculate adjustment towards center for the popup
-    const adjustmentX = event.clientX < window.innerWidth / 2 ? 100 : -100;
-    const adjustmentY = event.clientY < window.innerHeight / 2 ? 50 : -50;
-    // Create a loss popup at the click position
-    const lossPopup = {
-      id: Date.now(),
-      x: event.clientX + adjustmentX,
-      y: event.clientY + adjustmentY,
-      amount: `-${formatAmount(missPenaltyPercentage * 100)}%`,
-      type: 'loss',
-    };
-    setCoinPopups((prevPopups) => [...prevPopups, lossPopup]);
-
-    // Schedule the popup removal after 200ms
-    setTimeout(() => {
-      setCoinPopups((prevPopups) => prevPopups.filter(popup => popup.id !== lossPopup.id));
-    }, 1000);
+    // Show the Coin loss popup
+    showPopup(event.clientX, event.clientY, missPenaltyPercentage * 100, 'loss');
   };
 
 
@@ -628,32 +611,43 @@ export default function Home() {
   };
 
 
+  // Function to add a new bot
+  const addBot = () => {
+    setBotPositions(prevBotPositions => [...prevBotPositions, generatePosition()]);
+  };
 
+  // check if bot overlaps target
   const doesBotOverlapTarget = (botPos, targetPos) => {
+    // get the target radius
     const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
 
-    // Calculate the distance from the bot to the target's center
-    const distanceX = Math.abs(botPos.x - targetPos.x);
-    const distanceY = Math.abs(botPos.y - targetPos.y);
-
-    // Check if the bot is within the target's bounds
-    const overlapsX = distanceX <= targetRadius;
-    const overlapsY = distanceY <= targetRadius;
-    return overlapsX && overlapsY;
+    // Calculate the distance between the bot and the target
+    const distanceX = botPos.x - targetPos.x;
+    const distanceY = botPos.y - targetPos.y;
+    const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    // is the distance less than the target radius
+    return distance <= targetRadius;
   };
-  // Function to check for bot/target overlap 
+  // trigger a hit when bot overlaps target
   const checkForBotHits = () => {
     if (botPositions.length > 0 && !isGamePaused) {
       botPositions.forEach((botPos) => {
-        targetPositions.forEach((targetPos, targetIndex) => {
+        // Iterate in reverse order to prioritize most recently spawned (topmost) targets
+        for (let targetIndex = targetPositions.length - 1; targetIndex >= 0; targetIndex--) {
+          const targetPos = targetPositions[targetIndex];
           if (doesBotOverlapTarget(botPos, targetPos)) {
-            // Delay the hit to account for transition
-            setTimeout(() => onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y }), 500);
+            // Hit detected, trigger target hit logic
+            setTimeout(() => onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y }), 1000);
+            break; // Stop checking after the first hit is registered
           }
-        });
+        }
       });
     }
   };
+  // Effect to check for bot hits everytime bot positions change
+  useEffect(() => {
+    checkForBotHits();
+  }, [botPositions]);
 
   // Effect to update bot positions and check for hits
   useEffect(() => {
@@ -669,9 +663,7 @@ export default function Home() {
     }
   }, [botSpeedMultiplier, botPositions.length, isGamePaused]);
 
-  useEffect(() => {
-    checkForBotHits();
-  }, [botPositions]);
+
 
 
 
@@ -818,8 +810,6 @@ export default function Home() {
 
 
 
-
-
   // data refs for game data autosave
   const scoreRef = useRef(Score);
   const coinRef = useRef(Coin);
@@ -828,7 +818,6 @@ export default function Home() {
   const storeItemsRef = useRef(storeItems);
   const levelUpUpgradesRef = useRef(levelUpUpgrades);
   const volumeRef = useRef(volume);
-
 
   // Update the ref when the state changes
   useEffect(() => {
@@ -895,9 +884,9 @@ export default function Home() {
 
   // Main game
   return (
-    <main className="h-screen w-screen overflow-hidden" >
+    <main className="h-screen w-screen overflow-hidden bg-bliss bg-cover bg-center" >
       {/* target spawn canvas */}
-      <div className=" h-screen w-screen absolute overflow-hidden" onMouseDown={(e) => { e.stopPropagation(); onTargetMiss(e); }} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
+      <div className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden" onMouseDown={(e) => { e.stopPropagation(); onTargetMiss(e); }} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
 
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
