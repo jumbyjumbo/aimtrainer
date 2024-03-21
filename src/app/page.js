@@ -176,7 +176,7 @@ export default function Home() {
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 1.5 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.5 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.2 },
     { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 2 },
     { id: 4, buff: '+1 base Coin', baseCost: 11, owned: 0, growthRate: 1.3 },
     { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 1.4 },
@@ -615,7 +615,6 @@ export default function Home() {
   const addBot = () => {
     setBotPositions(prevBotPositions => [...prevBotPositions, generatePosition()]);
   };
-
   // check if bot overlaps target
   const doesBotOverlapTarget = (botPos, targetPos) => {
     // get the target radius
@@ -629,40 +628,50 @@ export default function Home() {
     return distance <= targetRadius;
   };
   // trigger a hit when bot overlaps target
-  const checkForBotHits = () => {
-    if (botPositions.length > 0 && !isGamePaused) {
-      botPositions.forEach((botPos) => {
-        // Iterate in reverse order to prioritize most recently spawned (topmost) targets
-        for (let targetIndex = targetPositions.length - 1; targetIndex >= 0; targetIndex--) {
-          const targetPos = targetPositions[targetIndex];
-          if (doesBotOverlapTarget(botPos, targetPos)) {
-            // Hit detected, trigger target hit logic
-            setTimeout(() => onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y }), 1000);
-            break; // Stop checking after the first hit is registered
-          }
-        }
-      });
+  const checkForBotHit = (newPosition) => {
+    const botPos = newPosition;
+    // check for overlap starting with newest target
+    for (let targetIndex = targetPositions.length - 1; targetIndex >= 0; targetIndex--) {
+      const targetPos = targetPositions[targetIndex];
+      if (doesBotOverlapTarget(botPos, targetPos)) {
+        // Hit detected, trigger target hit logic
+        onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y });
+        break; // Stop checking after the first hit is registered
+      }
     }
   };
-  // Effect to check for bot hits everytime bot positions change
-  useEffect(() => {
-    checkForBotHits();
-  }, [botPositions]);
+  // move a bot to a new position then check for target hit
+  const moveBotAndCheckHit = (botIndex) => {
+    // Generate a new position for the bot
+    const newPosition = generatePosition();
+    // Update the position of the specific bot
+    setBotPositions(prevBotPositions =>
+      prevBotPositions.map((pos, index) => index === botIndex ? newPosition : pos)
+    );
+    // Delay the hit check to occur after the bot movement animation completes
+    setTimeout(() => {
+      checkForBotHit(newPosition);
+    }, 250 + 50); // Match the duration of the CSS transition + click delay
+  };
+  // move every bot and check for hit sequentially
+  const moveBotsSequentially = () => {
+    botPositions.forEach((_, index) => {
+      setTimeout(() => {
+        moveBotAndCheckHit(index);
+      }, index * 100); // Delay between each bot move
+    });
+  };
 
-  // Effect to update bot positions and check for hits
+  // Move bots sequentially at interval
   useEffect(() => {
-    if (botPositions.length > 0 && !isGamePaused) {
-      const intervalDelay = 2000 / botSpeedMultiplier;
+    if (!isGamePaused) {
       const intervalId = setInterval(() => {
-        setBotPositions(prevBotPositions =>
-          prevBotPositions.map(() => generatePosition())
-        );
-      }, intervalDelay);
+        moveBotsSequentially();
+      }, 5000 / botSpeedMultiplier); // interval in ms
 
       return () => clearInterval(intervalId);
     }
-  }, [botSpeedMultiplier, botPositions.length, isGamePaused]);
-
+  }, [botSpeedMultiplier, isGamePaused]); //dependencies
 
 
 
@@ -970,7 +979,7 @@ export default function Home() {
 
         {/* XP Progress Bar */}
         <div className="backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[5vh] bg-[#076beb] bg-opacity-65 flex items-center">
-          <div className={`h-full border-black bg-[#076beb] bg-opacity-65 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
+          <div className={`h-full border-black bg-[#076beb] bg-opacity-50 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
           {/* Display Level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
             <span className="text-[3vh]">Level {playerProgress.currentLevel}</span>
