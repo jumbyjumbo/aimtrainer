@@ -190,9 +190,28 @@ export default function Home() {
     { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 1.4 },
     { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 100 },
     { id: 7, buff: '+10% XP', baseCost: 333, owned: 0, growthRate: 12 },
-    { id: 8, buff: '+5% speed reward', baseCost: 420, owned: 0, growthRate: 15 },
     { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 30 },
   ]);
+
+  // store the next affordable item id
+  const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
+
+  // get the next affordable item
+  useEffect(() => {
+    // Filter unowned and unaffordable items
+    const unownedItems = storeItems.filter(item => item.owned === 0 && Coin < calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
+
+    // Sort by affordability (ascending)
+    unownedItems.sort((a, b) => calculateCurrentItemCost(a.baseCost, a.growthRate, a.owned) - calculateCurrentItemCost(b.baseCost, b.growthRate, b.owned));
+
+    // Set the ID of the next affordable item (if any)
+    if (unownedItems.length > 0) {
+      setNextAffordableItemId(unownedItems[0].id);
+    } else {
+      setNextAffordableItemId(null);
+    }
+  }, [Coin, storeItems]);
+
 
   // amount of combo and Coin loss on miss in percentage
   const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(1);
@@ -238,7 +257,7 @@ export default function Home() {
 
   // Function to calculate the XP needed to Level up
   const XPNeededToLevelUp = (Level) => {
-    const baseXP = 5; // XP needed for Level 1 to 2
+    const baseXP = 50; // XP needed for Level 1 to 2
     const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent Level
     const eXPonentBase = 1.07; // Determines how much the difficulty increases per Level
 
@@ -341,6 +360,8 @@ export default function Home() {
     { id: 1, buff: "+1 ⵙ", owned: 0 },
     { id: 2, buff: "+10% ⵙ speed", owned: 0 },
     { id: 3, buff: "+10% ₿", owned: 0 },
+    { id: 4, buff: "+10% speed reward", owned: 0 },
+
   ]);
 
   // Function to apply the effects of a level-up upgrade
@@ -357,6 +378,10 @@ export default function Home() {
         break;
       case "+10% ₿":
         setCoinGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
+        break;
+      case "+10% speed reward":
+        setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.1);
+        break;
       default:
         console.log("Invalid upgrade description:", buff);
     }
@@ -615,9 +640,6 @@ export default function Home() {
         break;
       case '+10% XP':
         setXpGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
-        break;
-      case '+5% speed reward':
-        setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.05);  //base 5% increase
         break;
       case '-10% item cost':
         setItemCostReductionMultiplier(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
@@ -1057,7 +1079,7 @@ export default function Home() {
               return (
                 <div
                   key={item.id}
-                  className={`flex flex-col bg-white bg-opacity-50 rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center ${!affordable ? "opacity-30" : ""}`}
+                  className={`flex flex-col bg-white bg-opacity-50 rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}
                   onMouseDown={() => affordable && purchaseItem(item.id)}
                 >
                   {/* Item description */}
@@ -1072,46 +1094,51 @@ export default function Home() {
             })}
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Level up overlay */}
-      {isLevelingUp && (
-        <div className="absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
-          <div className='text-[10vh] h-[20vh]' >level up!</div>
-          <div className="px-[8vw] pb-[16vh] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
-            {offeredUpgrades.map((upgrade, index) => (
-              <div
-                key={upgrade.id}
-                className="bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
-                onClick={() => selectLevelUpUpgrade(upgrade)}
-              >
-                {upgrade.buff}
-              </div>
-            ))}
+      {
+        isLevelingUp && (
+          <div className="absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
+            <div className='text-[10vh] h-[20vh]' >level up!</div>
+            <div className="px-[8vw] pb-[16vh] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
+              {offeredUpgrades.map((upgrade, index) => (
+                <div
+                  key={upgrade.id}
+                  className="bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
+                  onClick={() => selectLevelUpUpgrade(upgrade)}
+                >
+                  {upgrade.buff}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* menu overlay */}
-      {isMenuOpen && (
-        <div className=" absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
-          <div className='text-[10vh] h-[20vh] flex justify-center items-center' >aimtrainer</div>
-          {/* sound control */}
-          <div className='h-[80vh] flex flex-row justify-center items-center' >
-            <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
-            <div className='w-[2vw]'></div>
-            <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
-              id="volume-control"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => setVolume(e.target.value)}
-            />
+      {
+        isMenuOpen && (
+          <div className=" absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
+            <div className='text-[10vh] h-[20vh] flex justify-center items-center' >aimtrainer</div>
+            {/* sound control */}
+            <div className='h-[80vh] flex flex-row justify-center items-center' >
+              <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
+              <div className='w-[2vw]'></div>
+              <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
+                id="volume-control"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={(e) => setVolume(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
-      )}
-    </main>
+        )
+      }
+    </main >
   );
 }
