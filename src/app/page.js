@@ -938,7 +938,7 @@ export default function Home() {
     return (
       <div className="h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
         {/* game title */}
-        <div className="text-[10vh] lg:text-[20vh] leading-none text-center font-bold ">
+        <div className="text-[10vh] lg:text-[20vh] leading-none text-center">
           aim trainer
         </div>
         {/* glyphteck studio */}
