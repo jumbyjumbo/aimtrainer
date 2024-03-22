@@ -1068,7 +1068,7 @@ export default function Home() {
 
       {/* Coin store */}
       {isShopOpen && (
-        <div className="absolute overflow-hidden w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black">
+        <div className="absolute overflow-auto w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black">
 
           {/* item list */}
           <div className="grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] p-[2vh]">
