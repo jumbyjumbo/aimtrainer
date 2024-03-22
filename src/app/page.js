@@ -1013,10 +1013,8 @@ export default function Home() {
 
         {/* Coin counter */}
         <div className="absolute top-[5vh] left-[2vw] flex items-center">
-          <img src="/btclogo.png" alt="BTC Logo" style={{ width: '5vh', height: '5vh' }} className="border-[3px] border-black rounded-full" />
-          <div style={{ width: '1vw' }}></div>
           <div>
-            {formatAmount(Coin)}
+            {formatAmount(Coin)} ₿
           </div>
         </div>
 
@@ -1086,8 +1084,7 @@ export default function Home() {
                   <div className="flex-2 flex justify-center items-center h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
                   <div className="flex-1 h-full flex items-center justify-center">
-                    <img src="/btclogo.png" alt="BTC Logo" className="w-[3.5vh] h-[3.5vh] lg:w-[5vh] lg:h-[5vh] border-[3px] border-black rounded-full" />
-                    <span className="text-[3.5vh] lg:text-[5vh] ml-2">{formatAmount(calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned))}</span>
+                    <div className="text-[3.5vh] lg:text-[5vh] ml-2">{formatAmount(calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned))} ₿</div>
                   </div>
                 </div>
               );
