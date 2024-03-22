@@ -154,6 +154,14 @@ export default function Home() {
   // target positions
   const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
 
+  // Ref for target positions
+  const targetPositionsRef = useRef(targetPositions);
+  // Update the ref when the state changes
+  useEffect(() => {
+    targetPositionsRef.current = targetPositions;
+  }, [targetPositions]);
+
+
   // Bot position state
   const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
 
@@ -176,14 +184,14 @@ export default function Home() {
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 1.5 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.2 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 2 },
-    { id: 4, buff: '+1 base Coin', baseCost: 11, owned: 0, growthRate: 1.3 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.33 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 6.81 },
+    { id: 4, buff: '+1 base Coin', baseCost: 11, owned: 0, growthRate: 4.2 },
     { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 1.4 },
-    { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 1.7 },
-    { id: 7, buff: '+10% Coins', baseCost: 333, owned: 0, growthRate: 1.7 },
-    { id: 8, buff: '+25% speed reward', baseCost: 420, owned: 0, growthRate: 2 },
-    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 1.5 },
+    { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 100 },
+    { id: 7, buff: '+10% Coins', baseCost: 333, owned: 0, growthRate: 12 },
+    { id: 8, buff: '+5% speed reward', baseCost: 420, owned: 0, growthRate: 15 },
+    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 30 },
   ]);
 
   // amount of combo and Coin loss on miss in percentage
@@ -317,8 +325,8 @@ export default function Home() {
   // Level-Up Upgrades
   const [levelUpUpgrades, setLevelUpUpgrades] = useState([
     { id: 0, buff: "+1 base XP", owned: 0 },
-    { id: 1, buff: "+1 bot", owned: 0 },
-    { id: 2, buff: "+10% bot speed", owned: 0 },
+    { id: 1, buff: "+1 ⨀", owned: 0 },
+    { id: 2, buff: "+10% ⨀ speed", owned: 0 },
   ]);
 
   // Function to apply the effects of a level-up upgrade
@@ -327,10 +335,10 @@ export default function Home() {
       case "+1 base XP":
         setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);
         break;
-      case "+1 bot":
+      case "+1 ⨀":
         addBot();
         break;
-      case "+10% bot speed":
+      case "+10% ⨀ speed":
         setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
       default:
@@ -464,16 +472,25 @@ export default function Home() {
     return finalCoinEarned;
   };
 
+  // Sound effect for target hit
+  const hitSoundRef = useRef(null);
+  // Preload the hit sound on game load
+  useEffect(() => {
+    // Preload the hit sound and store it in the ref
+    hitSoundRef.current = new Audio('/hitbubble.mp3');
+    hitSoundRef.current.load();
+  }, []);
   // Function to play the hit sound
   const playHitSound = () => {
-    if (typeof window !== "undefined") {
-      const hitSound = new Audio('/hitbubble.mp3');
-      hitSound.volume = volume;
-      hitSound.play();
+    if (hitSoundRef.current) {
+      const hitSound = hitSoundRef.current.cloneNode(); // Clone the audio for concurrent playback
+      hitSound.volume = volume; // Set volume to the current state value
+      hitSound.play().catch(error => console.error('Error playing the sound:', error));
     }
   };
 
 
+  // trigger the popup on target hit/miss
   const showPopup = (x, y, amount, type) => {
     // Calculate adjustment towards center for the popup
     const adjustmentX = x < window.innerWidth / 2 ? 100 : -100;
@@ -498,8 +515,6 @@ export default function Home() {
       setCoinPopups((prevPopups) => prevPopups.filter(popup => popup.id !== newPopup.id));
     }, removalDelay);
   };
-
-
 
   // when u hit a target
   const onTargetHit = (targetID, event) => {
@@ -576,8 +591,8 @@ export default function Home() {
       case '+10% Coins':
         // Logic for +10% Coins
         break;
-      case '+25% speed reward':
-        setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.4); // flat + 0.4 multiplier
+      case '+5% speed reward':
+        setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.05);  //base 5% increase
         break;
       case '-10% item cost':
         setItemCostReductionMultiplier(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
@@ -620,21 +635,22 @@ export default function Home() {
     // get the target radius
     const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
 
+    // Reduce the effective target radius by 1px for the bot's advantage
+    const effectiveTargetRadius = targetRadius - 1;
+
     // Calculate the distance between the bot and the target
     const distanceX = botPos.x - targetPos.x;
     const distanceY = botPos.y - targetPos.y;
     const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-    // is the distance less than the target radius
-    return distance <= targetRadius;
+
+    // Check if the distance is less than the effective target radius (with 1px advantage)
+    return distance <= effectiveTargetRadius;
   };
   // trigger a hit when bot overlaps target
-  const checkForBotHit = (newPosition) => {
-    const botPos = newPosition;
-    // check for overlap starting with newest target
-    for (let targetIndex = targetPositions.length - 1; targetIndex >= 0; targetIndex--) {
-      const targetPos = targetPositions[targetIndex];
+  const checkForBotHit = (botPos) => {
+    for (let targetIndex = targetPositionsRef.current.length - 1; targetIndex >= 0; targetIndex--) {
+      const targetPos = targetPositionsRef.current[targetIndex];
       if (doesBotOverlapTarget(botPos, targetPos)) {
-        // Hit detected, trigger target hit logic
         onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y });
         break; // Stop checking after the first hit is registered
       }
@@ -667,7 +683,7 @@ export default function Home() {
     if (!isGamePaused) {
       const intervalId = setInterval(() => {
         moveBotsSequentially();
-      }, 5000 / botSpeedMultiplier); // interval in ms
+      }, 2000 / botSpeedMultiplier); // interval in ms
 
       return () => clearInterval(intervalId);
     }
@@ -879,10 +895,7 @@ export default function Home() {
           aim trainer
         </div>
         {/* glyphteck studio */}
-        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studio</div>
-        <video className="z-30 opacity-[30%] min-h-full min-w-full object-cover fixed top-0 left-0" autoPlay loop muted playsInline preload="auto">
-          <source src="/tvstatic.mp4" type="video/mp4" />
-        </video>
+        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studios</div>
       </div>
 
     );
