@@ -186,10 +186,10 @@ export default function Home() {
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 1.5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.33 },
     { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 6.81 },
-    { id: 4, buff: '+1 base Coin', baseCost: 11, owned: 0, growthRate: 4.2 },
+    { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 4.2 },
     { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 1.4 },
     { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 100 },
-    { id: 7, buff: '+10% Coins', baseCost: 333, owned: 0, growthRate: 12 },
+    { id: 7, buff: '+10% XP', baseCost: 333, owned: 0, growthRate: 12 },
     { id: 8, buff: '+5% speed reward', baseCost: 420, owned: 0, growthRate: 15 },
     { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 30 },
   ]);
@@ -223,14 +223,22 @@ export default function Home() {
   const [botSpeedMultiplier, setBotSpeedMultiplier] = useState(1);
 
 
+  // Multipliers for coin and XP gains
+  const [coinGainMultiplier, setCoinGainMultiplier] = useState(1.0);
+  const [xpGainMultiplier, setXpGainMultiplier] = useState(1.0);
+
+
 
   // XP progress towards next Level
   const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
   const [baseXPGainPerHit, setBaseXPGainPerHit] = useState(1); // Base XP gain per target hit
 
+  // 3 random Offered upgrades on Level up
+  const [offeredUpgrades, setOfferedUpgrades] = useState([]);
+
   // Function to calculate the XP needed to Level up
   const XPNeededToLevelUp = (Level) => {
-    const baseXP = 50; // XP needed for Level 1 to 2
+    const baseXP = 5; // XP needed for Level 1 to 2
     const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent Level
     const eXPonentBase = 1.07; // Determines how much the difficulty increases per Level
 
@@ -245,17 +253,22 @@ export default function Home() {
   const addXPAndCheckLevelUp = (XPGained) => {
     setPlayerProgress(prevProgress => {
       let newCurrentXP = prevProgress.currentXP + XPGained;
-      let currentLVL = prevProgress.currentLevel;
-      let XPNeeded = XPNeededToLevelUp(currentLVL);
+      let currentLevel = prevProgress.currentLevel;
+      let XPNeeded = XPNeededToLevelUp(currentLevel);
 
-      // Check if the player has enough XP to Level up
+      // Check if the player has enough XP to level up
       if (newCurrentXP >= XPNeeded) {
         newCurrentXP -= XPNeeded;
-        currentLVL++;
+        currentLevel++;
         setIsLevelingUp(true);
+
+        // Get 3 random upgrades to offer
+        const upgradesToOffer = getRandomUpgrades();
+        // Assuming you have a state to store these 3 upgrades
+        setOfferedUpgrades(upgradesToOffer);
       }
 
-      return { currentXP: newCurrentXP, currentLevel: currentLVL };
+      return { currentXP: newCurrentXP, currentLevel: currentLevel };
     });
   };
 
@@ -324,27 +337,43 @@ export default function Home() {
 
   // Level-Up Upgrades
   const [levelUpUpgrades, setLevelUpUpgrades] = useState([
-    { id: 0, buff: "+1 base XP", owned: 0 },
-    { id: 1, buff: "+1 ⨀", owned: 0 },
-    { id: 2, buff: "+10% ⨀ speed", owned: 0 },
+    { id: 0, buff: "+1 base ₿", owned: 0 },
+    { id: 1, buff: "+1 ⵙ", owned: 0 },
+    { id: 2, buff: "+10% ⵙ speed", owned: 0 },
+    { id: 3, buff: "+10% ₿", owned: 0 },
   ]);
 
   // Function to apply the effects of a level-up upgrade
   const applyLevelUpUpgrades = (buff) => {
     switch (buff) {
-      case "+1 base XP":
-        setBaseXPGainPerHit(baseXPGainPerHit => baseXPGainPerHit + 1);
+      case "+1 base ₿":
+        setBaseCoinReward(baseCoinReward => baseCoinReward + 1);
         break;
-      case "+1 ⨀":
+      case "+1 ⵙ":
         addBot();
         break;
-      case "+10% ⨀ speed":
+      case "+10% ⵙ speed":
         setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
+      case "+10% ₿":
+        setCoinGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
       default:
         console.log("Invalid upgrade description:", buff);
     }
   };
+
+  // get 3 random levelUpUpgrades
+  const getRandomUpgrades = () => {
+    // Shuffle the array using the Fisher-Yates algorithm
+    for (let i = levelUpUpgrades.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [levelUpUpgrades[i], levelUpUpgrades[j]] = [levelUpUpgrades[j], levelUpUpgrades[i]];
+    }
+
+    // Return the first 3 items of the shuffled array
+    return levelUpUpgrades.slice(0, 3);
+  };
+
 
   // on click effect for level up upgrade
   const selectLevelUpUpgrade = (selectedUpgrade) => {
@@ -460,12 +489,8 @@ export default function Home() {
     // bonus Coin combo multiplier based on progress bar
     const comboCoinBonus = 0.01 * (speedCoinBonus * Math.max(1, combo));
 
-    // Find the "+10% Coins" item and calculate its bonus
-    const CoinBonusItem = storeItems.find(item => item.buff === '+10% Coins');
-    const CoinBonusMultiplier = 1 + (0.1 * CoinBonusItem.owned); // 10% bonus for each owned
-
     // Apply the "+10% Coins" bonus
-    const finalCoinEarned = comboCoinBonus * CoinBonusMultiplier;
+    const finalCoinEarned = comboCoinBonus * coinGainMultiplier;
 
     // Update Coin state with the final amount earned
     setCoin((prevCoin) => prevCoin + finalCoinEarned);
@@ -531,7 +556,7 @@ export default function Home() {
     setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.1 * maxComboLimit * (comboIncreaseMultiplier)));
 
     // Multiply XP gain by the combo multiplier 
-    const XPGained = baseXPGainPerHit * Math.max(1, combo); // Ensure the multiplier is at least 1
+    const XPGained = baseXPGainPerHit * Math.max(1, combo) * xpGainMultiplier; // Ensure the multiplier is at least 1
     // Add the XP and check for Level up
     addXPAndCheckLevelUp(XPGained);
 
@@ -579,8 +604,8 @@ export default function Home() {
       case '+10% target size':
         setTargetSizeMultiplier(prevSize => prevSize + 0.1); //base 10% increase
         break;
-      case '+1 base Coin':
-        setBaseCoinReward(prevCoins => prevCoins + 1); //flat ++
+      case '+1 base XP':
+        setBaseXPGainPerHit(prevXPGain => prevXPGain + 1);
         break;
       case '+10% combo increase':
         setComboIncreaseMultiplier(prevComboIncreaseMultiplier => prevComboIncreaseMultiplier + 0.1); //base 10% increase
@@ -588,8 +613,8 @@ export default function Home() {
       case '+1 max combo':
         setMaxComboLimit(prevLimit => prevLimit + 1);
         break;
-      case '+10% Coins':
-        // Logic for +10% Coins
+      case '+10% XP':
+        setXpGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
       case '+5% speed reward':
         setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.05);  //base 5% increase
@@ -895,7 +920,7 @@ export default function Home() {
           aim trainer
         </div>
         {/* glyphteck studio */}
-        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studios</div>
+        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studiⵙs</div>
       </div>
 
     );
@@ -1054,7 +1079,7 @@ export default function Home() {
         <div className="absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
           <div className='text-[10vh] h-[20vh]' >level up!</div>
           <div className="px-[8vw] pb-[16vh] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
-            {levelUpUpgrades.map((upgrade, index) => (
+            {offeredUpgrades.map((upgrade, index) => (
               <div
                 key={upgrade.id}
                 className="bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
