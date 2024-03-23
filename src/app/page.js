@@ -1050,7 +1050,7 @@ export default function Home() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[90vh] top-[10vh] md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[86vh] top-[14vh] md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
           <div className="overflow-scroll p-[2vh] pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-4 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
