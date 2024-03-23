@@ -926,7 +926,7 @@ export default function Home() {
   // loading screen
   if (isLoading) {
     return (
-      <div className="h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+      <div className="bg-white h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
         {/* game title */}
         <div className="text-[10vh] lg:text-[20vh] leading-none text-center">
           aim trainer
@@ -1050,7 +1050,7 @@ export default function Home() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[90vh] top-[10vh] md:h-[85vh] md:top-[15vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
           <div className="overflow-auto p-[2vh] pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-4 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
