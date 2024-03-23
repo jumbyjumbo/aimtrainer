@@ -139,6 +139,23 @@ export default function Home() {
 
   // Store open state
   const [isShopOpen, setIsShopOpen] = useState(false);
+  // render store?
+  const [showStore, setShowStore] = React.useState(false);
+  // shop animation effect
+  useEffect(() => {
+    let timeoutId;
+
+    if (isShopOpen) {
+      setShowStore(true); // Immediately show the store for the slide-up animation
+    } else {
+      // Start the slide-down animation but keep the store visible for its duration
+      timeoutId = setTimeout(() => setShowStore(false), 100); // Match the animation duration
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [isShopOpen]);
+
+
 
   // game state when Leveling up
   const [isLevelingUp, setIsLevelingUp] = useState(false);
@@ -989,7 +1006,6 @@ export default function Home() {
             <img src="/bot.png" alt="Bot cursor" style={{ width: 32, height: 32 }} />
           </div>
         ))}
-
       </div>
 
       {/* HUD */}
@@ -1065,8 +1081,8 @@ export default function Home() {
       </div>
 
       {/* Coin store */}
-      {isShopOpen && (
-        <div className="absolute overflow-auto w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black">
+      {showStore && (
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute overflow-auto w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
           <div className="pt-[4vh] grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] p-[2vh]">
             {storeItems.map((item, index) => {
@@ -1090,8 +1106,7 @@ export default function Home() {
             })}
           </div>
         </div>
-      )
-      }
+      )}
 
       {/* Level up overlay */}
       {
