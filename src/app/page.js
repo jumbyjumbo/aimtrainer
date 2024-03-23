@@ -583,6 +583,7 @@ export default function Home() {
     }, removalDelay);
   };
 
+
   // when u hit a target
   const onTargetHit = (targetID, event) => {
     // Play the hit sound
@@ -966,27 +967,38 @@ export default function Home() {
   }
 
 
-
+  // handle touch event to prevent onmousedown on mobile
+  let touchEventFired = false;
 
   // Main game
   return (
     <main className="h-screen w-screen overflow-hidden bg-bliss bg-cover bg-center" >
       {/* target spawn canvas */}
       <div
-
-        className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden" onTouchStart={(e) => { e.stopPropagation(); onTargetMiss(e); }} onMouseDown={(e) => { e.stopPropagation(); onTargetMiss(e); }} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
+        style={{ cursor: "url('/greendot.png') 32 32, auto" }}
+        className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
+        onTouchStart={(e) => { touchEventFired = true, e.stopPropagation(); onTargetMiss(e); }}
+        onMouseDown={(e) => {
+          if (!touchEventFired) {
+            e.stopPropagation(); onTargetMiss(e);
+            touchEventFired = false;
+          }
+        }}>
 
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
             key={targetID}
             onTouchStart={(e) => {
+              touchEventFired = true;
               e.stopPropagation();
               onTargetHit(targetID, e);
             }}
             onMouseDown={(e) => {
-              e.stopPropagation();
-              onTargetHit(targetID, e);
+              if (!touchEventFired) {
+                e.stopPropagation(); onTargetHit(targetID, e);
+                touchEventFired = false;
+              }
             }}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
