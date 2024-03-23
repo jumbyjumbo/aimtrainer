@@ -967,9 +967,6 @@ export default function Home() {
   }
 
 
-  // handle touch event to prevent onmousedown on mobile
-  let touchEventFired = false;
-
   // Main game
   return (
     <main className="h-screen w-screen overflow-hidden bg-bliss bg-cover bg-center" >
@@ -977,28 +974,17 @@ export default function Home() {
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
-        onTouchStart={(e) => { touchEventFired = true, e.stopPropagation(); onTargetMiss(e); }}
         onMouseDown={(e) => {
-          if (!touchEventFired) {
-            e.stopPropagation(); onTargetMiss(e);
-            touchEventFired = false;
-          }
+          e.stopPropagation(); onTargetMiss(e);
+          touchEventFired = false;
         }}>
 
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
-            key={targetID}
-            onTouchStart={(e) => {
-              touchEventFired = true;
-              e.stopPropagation();
-              onTargetHit(targetID, e);
-            }}
             onMouseDown={(e) => {
-              if (!touchEventFired) {
-                e.stopPropagation(); onTargetHit(targetID, e);
-                touchEventFired = false;
-              }
+              e.stopPropagation(); onTargetHit(targetID, e);
+              touchEventFired = false;
             }}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
