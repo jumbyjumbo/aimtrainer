@@ -972,12 +972,18 @@ export default function Home() {
   return (
     <main className="h-screen w-screen overflow-hidden bg-bliss bg-cover bg-center" >
       {/* target spawn canvas */}
-      <div className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden" onMouseDown={(e) => { e.stopPropagation(); onTargetMiss(e); }} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
+      <div
+
+        className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden" onTouchStart={(e) => { e.stopPropagation(); onTargetMiss(e); }} onMouseDown={(e) => { e.stopPropagation(); onTargetMiss(e); }} style={{ cursor: "url('/greendot.png') 32 32, auto" }}>
 
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
             key={targetID}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              onTargetHit(targetID, e);
+            }}
             onMouseDown={(e) => {
               e.stopPropagation();
               onTargetHit(targetID, e);
