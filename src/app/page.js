@@ -34,7 +34,6 @@ export default function Home() {
       }
     });
   };
-
   const applyLevelUpEffectsBasedOnOwned = (updatedLevelUpUpgrades) => {
     updatedLevelUpUpgrades.forEach(upgrade => {
       for (let i = 0; i < upgrade.owned; i++) {
@@ -42,7 +41,6 @@ export default function Home() {
       }
     });
   };
-
   // Function to fetch game data from Firestore and set it to the state
   const fetchGameData = async (userId) => {
     const docRef = doc(db, 'players', userId);
@@ -130,6 +128,7 @@ export default function Home() {
 
   // Sound volume state
   const [volume, setVolume] = useState(0.2);
+
 
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
@@ -319,6 +318,10 @@ export default function Home() {
     const userAgent = navigator.userAgent.toLowerCase();
     const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
     setIsMobile(mobile);
+
+    if (mobile) {
+      setVolume(0); // Mute sound by default on mobile devices
+    }
   }, []);
 
   // Touch event states
