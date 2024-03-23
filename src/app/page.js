@@ -733,9 +733,7 @@ export default function Home() {
   useEffect(() => {
     // Prevent default touch behavior globally
     const preventDefaultTouch = (e) => e.preventDefault();
-    if (!isShopOpen) {
-      document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
-    }
+    document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
 
 
     // Generate initial target positions
