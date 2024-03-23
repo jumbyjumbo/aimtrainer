@@ -141,7 +141,7 @@ export default function Home() {
       setShowStore(true); // Immediately show the store for the slide-up animation
     } else {
       // Start the slide-down animation but keep the store visible for its duration
-      timeoutId = setTimeout(() => setShowStore(false), 100); // Match the animation duration
+      timeoutId = setTimeout(() => setShowStore(false), 150); // Match the animation duration
     }
 
     return () => clearTimeout(timeoutId);
@@ -941,7 +941,7 @@ export default function Home() {
 
   // Main game
   return (
-    <main className="h-screen w-screen overflow-hidden bg-bliss bg-cover bg-center" >
+    <main className="bg-bliss h-screen w-screen overflow-hidden bg-cover bg-center" >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
@@ -1058,18 +1058,15 @@ export default function Home() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute overflow-auto w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
-          <div className="pt-[4vh] grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] p-[2vh]">
+          <div className="overflow-auto pt-[4vh] grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] p-[2vh]">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
 
               return (
-                <div
-                  key={item.id}
-                  className={`flex flex-col bg-white bg-opacity-50 rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}
-                  onMouseDown={() => affordable && purchaseItem(item.id)}
+                <div key={item.id} onMouseDown={() => affordable && purchaseItem(item.id)} className={`flex flex-col bg-white bg-opacity-50 rounded-md md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}
                 >
                   {/* Item description */}
                   <div className="flex-2 flex justify-center items-center h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
@@ -1085,47 +1082,43 @@ export default function Home() {
       )}
 
       {/* Level up overlay */}
-      {
-        isLevelingUp && (
-          <div className="absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
-            <div className='text-[10vh] h-[20vh]' >level up!</div>
-            <div className="px-[8vw] pb-[16vh] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
-              {offeredUpgrades.map((upgrade, index) => (
-                <div
-                  key={upgrade.id}
-                  className="bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
-                  onClick={() => selectLevelUpUpgrade(upgrade)}
-                >
-                  {upgrade.buff}
-                </div>
-              ))}
-            </div>
+      {isLevelingUp && (
+        <div className="absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
+          <div className='text-[7vh] md:text-[10vh] h-[20vh]' >level up!</div>
+          <div className="px-[8vw] pb-[16vh] h-full grid grid-cols-1 lg:grid-cols-3 gap-[2vh] lg:gap-[2vw]">
+            {offeredUpgrades.map((upgrade, index) => (
+              <div
+                key={upgrade.id}
+                className="bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
+                onClick={() => selectLevelUpUpgrade(upgrade)}
+              >
+                {upgrade.buff}
+              </div>
+            ))}
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* menu overlay */}
-      {
-        isMenuOpen && (
-          <div className=" absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
-            <div className='text-[10vh] h-[20vh] flex justify-center items-center' >aimtrainer</div>
-            {/* sound control */}
-            <div className='h-[80vh] flex flex-row justify-center items-center' >
-              <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
-              <div className='w-[2vw]'></div>
-              <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
-                id="volume-control"
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => setVolume(e.target.value)}
-              />
-            </div>
+      {isMenuOpen && (
+        <div className=" absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
+          <div className='text-[10vh] h-[20vh] flex justify-center items-center' >aimtrainer</div>
+          {/* sound control */}
+          <div className='h-[80vh] flex flex-row justify-center items-center' >
+            <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
+            <div className='w-[2vw]'></div>
+            <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
+              id="volume-control"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(e) => setVolume(e.target.value)}
+            />
           </div>
-        )
-      }
+        </div>
+      )}
     </main >
   );
 }

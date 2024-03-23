@@ -27,8 +27,8 @@ module.exports = {
       animation: {
         fadeOutGain: 'fadeOut 500ms ease-out forwards',
         fadeOutLoss: 'fadeOut 1000ms ease-out forwards',
-        slideUp: 'slideUp 100ms ease-in-out forwards',
-        slideDown: 'slideDown 100ms ease-in-out forwards',
+        slideUp: 'slideUp 150ms ease-in-out forwards',
+        slideDown: 'slideDown 150ms ease-in-out forwards',
       },
       backgroundImage: {
         'bliss': "url('/bliss.jpg')",
