@@ -81,7 +81,6 @@ export default function Home() {
       // no need to change anything, data is already set to default
     }
   };
-
   // auto create user on load
   useEffect(() => {
     // Check for an authenticated user
@@ -102,7 +101,6 @@ export default function Home() {
 
     return () => unsubscribe(); // Clean up the subscription
   }, []);
-
   // Function to save game data to Firestore
   const autosaveGame = async (gameData) => {
     if (auth.currentUser) {
@@ -122,19 +120,14 @@ export default function Home() {
   };
 
 
-
-
-
-
   // Sound volume state
   const [volume, setVolume] = useState(0.2);
-
-
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
-
   // game paused state
   const [isGamePaused, setIsGamePaused] = useState(false);
+
+
 
   // Store open state
   const [isShopOpen, setIsShopOpen] = useState(false);
@@ -153,48 +146,44 @@ export default function Home() {
 
     return () => clearTimeout(timeoutId);
   }, [isShopOpen]);
-
-
-
   // game state when Leveling up
   const [isLevelingUp, setIsLevelingUp] = useState(false);
-
   // menu overlay state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   // pause game when menu or Level up overlay is open
   useEffect(() => {
     setIsGamePaused(isMenuOpen || isLevelingUp);
   }, [isMenuOpen, isLevelingUp]);
 
+
+
   // target positions
   const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
-
   // Ref for target positions
   const targetPositionsRef = useRef(targetPositions);
   // Update the ref when the state changes
   useEffect(() => {
     targetPositionsRef.current = targetPositions;
   }, [targetPositions]);
-
+  //  target hit interval in milliseconds
+  const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
 
   // Bot position state
   const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
 
   // target hit counter
   const [Score, setScore] = useState(0);
-
-  //  target hit interval in milliseconds
-  const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
-
+  //  Coin combo multiplier in integer
+  const [combo, setCombo] = useState(0);
   // State to track the amount of Coin the player has
   const [Coin, setCoin] = useState(0);
 
   //  track ontargethit/miss Coin popups
   const [CoinPopups, setCoinPopups] = useState([]);
 
-  //  Coin combo multiplier in integer
-  const [combo, setCombo] = useState(0);
+
+
+
 
   // Store items
   const [storeItems, setStoreItems] = useState([
@@ -208,10 +197,8 @@ export default function Home() {
     { id: 7, buff: '+10% XP', baseCost: 333, owned: 0, growthRate: 12 },
     { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 30 },
   ]);
-
   // store the next affordable item id
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
-
   // get the next affordable item
   useEffect(() => {
     // Filter unowned and unaffordable items
@@ -227,50 +214,47 @@ export default function Home() {
       setNextAffordableItemId(null);
     }
   }, [Coin, storeItems]);
+  // New state to track if the player can afford any shop item
+  const [canAfford, setCanAfford] = useState(false);
+  // Update canAfford state whenever Coins or storeItems change
+  useEffect(() => {
+    const affordable = storeItems.some(item => Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
+    setCanAfford(affordable);
+  }, [Coin, storeItems]);
 
 
   // amount of combo and Coin loss on miss in percentage
   const [missPenaltyPercentage, setMissPenaltyPercentage] = useState(1);
-
   // Initial decrease rate in percentage per milliseconds
   const [comboDecreaseRate, setComboDecreaseRate] = useState(0.0035);
-
   // Target size in % of base size
   const [targetSizeMultiplier, setTargetSizeMultiplier] = useState(1);
   const baseTargetSize = 85; // Base size in px
-
   // State to track the base Coin reward
   const [baseCoinReward, setBaseCoinReward] = useState(1);
-
   // combo increase multiplier
   const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
-
   // max Coin combo limit
   const [maxComboLimit, setMaxComboLimit] = useState(10);
-
   // target hit interval speed reward multiplier
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
-
   // item cost reduction rate
   const [itemCostReductionMultiplier, setItemCostReductionMultiplier] = useState(1);
-
   //  bot speed multiplier
   const [botSpeedMultiplier, setBotSpeedMultiplier] = useState(1);
-
-
   // Multipliers for coin and XP gains
   const [coinGainMultiplier, setCoinGainMultiplier] = useState(1.0);
   const [xpGainMultiplier, setXpGainMultiplier] = useState(1.0);
 
 
 
+
+
   // XP progress towards next Level
   const [playerProgress, setPlayerProgress] = useState({ currentXP: 0, currentLevel: 1 });
   const [baseXPGainPerHit, setBaseXPGainPerHit] = useState(1); // Base XP gain per target hit
-
   // 3 random Offered upgrades on Level up
   const [offeredUpgrades, setOfferedUpgrades] = useState([]);
-
   // Function to calculate the XP needed to Level up
   const XPNeededToLevelUp = (Level) => {
     const baseXP = 50; // XP needed for Level 1 to 2
@@ -283,7 +267,6 @@ export default function Home() {
 
     return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(Level, eXPonentBase)));
   };
-
   // handle XP gain and Level up on target hit
   const addXPAndCheckLevelUp = (XPGained) => {
     setPlayerProgress(prevProgress => {
@@ -309,9 +292,10 @@ export default function Home() {
 
 
 
+
+
   // State to determine if the user is on a mobile device
   const [isMobile, setIsMobile] = useState(false);
-
   // check if user is on mobile
   useEffect(() => {
     // Detect mobile users
@@ -323,10 +307,8 @@ export default function Home() {
       setVolume(0); // Mute sound by default on mobile devices
     }
   }, []);
-
   // Touch event states
   const [startTouchY, setStartTouchY] = useState(null);
-
   // Handler for touch start event
   const handleTouchStart = (e) => {
     const touchY = e.touches[0].clientY; // Get the starting Y position
@@ -345,7 +327,6 @@ export default function Home() {
       }
     }
   };
-
   // touch event listeners
   useEffect(() => {
     // Add touch event listeners
@@ -362,16 +343,6 @@ export default function Home() {
 
 
 
-
-
-  // New state to track if the player can afford any shop item
-  const [canAfford, setCanAfford] = useState(false);
-
-  // Update canAfford state whenever Coins or storeItems change
-  useEffect(() => {
-    const affordable = storeItems.some(item => Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
-    setCanAfford(affordable);
-  }, [Coin, storeItems]);
 
 
   // Level-Up Upgrades
@@ -448,12 +419,12 @@ export default function Home() {
       return amount.toFixed(2);
     }
   };
-
   // Generalized function for applying a multiplicative change %
   const applyMultiplicativeChange = (currentValue, changePercentage = 0.1) => {
     // For reduction, ie -10%, changePercentage should be negative
     return currentValue * (1 + changePercentage);
   };
+
 
   // Function to generate a random position on the screen
   const generatePosition = () => {
@@ -467,13 +438,13 @@ export default function Home() {
     // Return the calculated position.
     return { x, y };
   };
-
   // regenerate position for a single target
   const regeneratePosition = (targetID) => {
     setTargetPositions(prevPositions =>
       prevPositions.map((pos, index) => index === targetID ? generatePosition() : pos)
     );
   };
+
 
   // Function to add a new target
   const addTarget = () => {
@@ -483,18 +454,6 @@ export default function Home() {
     if (targetPositions.length > 1) { // Ensure at least one target remains
       setTargetPositions(targetPositions.slice(0, -1));
     }
-  };
-
-
-
-  // Base Coin reward bonus function based on time elapsed since last target hit
-  const calculateIntervalSpeedCoinBonus = (timeDifference) => {
-    // Cap the minimum time difference at 50ms
-    const effectiveTimeDifference = Math.max(timeDifference, 50);
-    // Calculate potential reward based on the formula and multiply by baseCoinReward
-    const potentialReward = baseCoinReward * (1.35 ** ((1000 - effectiveTimeDifference) * 0.01 * intervalSpeedRewardMultiplier));
-    // Return 1 as the minimum potential reward or the calculated potential reward
-    return potentialReward < 1 || timeDifference === 0 ? baseCoinReward : potentialReward;
   };
 
 
@@ -523,7 +482,15 @@ export default function Home() {
 
 
 
-
+  // Base Coin reward bonus function based on time elapsed since last target hit
+  const calculateIntervalSpeedCoinBonus = (timeDifference) => {
+    // Cap the minimum time difference at 50ms
+    const effectiveTimeDifference = Math.max(timeDifference, 50);
+    // Calculate potential reward based on the formula and multiply by baseCoinReward
+    const potentialReward = baseCoinReward * (1.35 ** ((1000 - effectiveTimeDifference) * 0.01 * intervalSpeedRewardMultiplier));
+    // Return 1 as the minimum potential reward or the calculated potential reward
+    return potentialReward < 1 || timeDifference === 0 ? baseCoinReward : potentialReward;
+  };
   // Coin reward per target hit
   const targetHitCoinReward = () => {
     const currentTime = Date.now();
@@ -541,6 +508,7 @@ export default function Home() {
     setCoin((prevCoin) => prevCoin + finalCoinEarned);
     return finalCoinEarned;
   };
+
 
   // Sound effect for target hit
   const hitSoundRef = useRef(null);
@@ -634,7 +602,6 @@ export default function Home() {
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
     return parseFloat((baseCost * Math.pow(growthRate, owned))) * itemCostReductionMultiplier;
   };
-
   // Function to apply the effects of a purchased item
   const applyPurchasedItem = (itemBuff) => {
     switch (itemBuff) {
@@ -668,8 +635,6 @@ export default function Home() {
       default: console.log('Invalid item description:', itemBuff);
     }
   };
-
-
   // Function to purchase an item from the store
   const purchaseItem = (itemId) => {
     const itemIndex = storeItems.findIndex(item => item.id === itemId);
@@ -692,6 +657,8 @@ export default function Home() {
       }
     }
   };
+
+
 
 
   // Function to add a new bot
@@ -745,7 +712,6 @@ export default function Home() {
       }, index * 100); // Delay between each bot move
     });
   };
-
   // Move bots sequentially at interval
   useEffect(() => {
     if (!isGamePaused) {
@@ -756,6 +722,8 @@ export default function Home() {
       return () => clearInterval(intervalId);
     }
   }, [botSpeedMultiplier, isGamePaused]); //dependencies
+
+
 
 
 
@@ -781,6 +749,7 @@ export default function Home() {
       clearTimeout(loadingTimeout);
     };
   }, []);
+
 
   // Add event listeners for space bar to open shop
   useEffect(() => {
@@ -832,7 +801,6 @@ export default function Home() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
-
   // Event listener for Esc key to toggle menu overlay
   useEffect(() => {
     const toggleMenu = (event) => {
@@ -849,9 +817,10 @@ export default function Home() {
   }, []);
 
 
+
+
   // Combo bar color state
   const [comboBarColor, setComboBarColor] = useState('rgb(248,148,20)'); // Start with orange
-
   // Function to determine the combo bar color based on timeElapsed
   const getComboBarColor = (timeElapsed) => {
     // Calculate the potential reward based on time elapsed
@@ -875,7 +844,6 @@ export default function Home() {
 
     return `rgb(${Math.round(redComponent)}, ${Math.round(greenComponent)}, ${Math.round(blueComponent)})`;
   };
-
   // Update the combo bar color based on timeElapsed
   const updateComboBarColor = () => {
     const currentTime = Date.now();
@@ -891,7 +859,6 @@ export default function Home() {
     // Continue the animation loop
     requestAnimationFrame(updateComboBarColor);
   };
-
   // Call the updateComboBarColor function when the component mounts
   useEffect(() => {
     // Start the animation loop
@@ -903,6 +870,9 @@ export default function Home() {
 
 
 
+
+
+
   // data refs for game data autosave
   const scoreRef = useRef(Score);
   const coinRef = useRef(Coin);
@@ -911,7 +881,6 @@ export default function Home() {
   const storeItemsRef = useRef(storeItems);
   const levelUpUpgradesRef = useRef(levelUpUpgrades);
   const volumeRef = useRef(volume);
-
   // Update the ref when the state changes
   useEffect(() => {
     scoreRef.current = Score;
@@ -923,8 +892,6 @@ export default function Home() {
     volumeRef.current = volume;
 
   }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume]);
-
-
   //auto save game data on interval
   useEffect(() => {
     const autosaveAction = () => {
@@ -949,6 +916,8 @@ export default function Home() {
     const autosaveInterval = setInterval(autosaveAction, 60000); //interval in ms
     return () => clearInterval(autosaveInterval);
   }, []);
+
+
 
 
 
