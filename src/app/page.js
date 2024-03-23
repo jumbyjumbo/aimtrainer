@@ -997,7 +997,7 @@ export default function Home() {
         </div>
 
         {/* Target hit and coin counter */}
-        <div className="text-[7vh] px-[2vw] absolute top-[5vh] w-full flex flex-row justify-between items-center">
+        <div className="md:text-[7vh] px-[2vw] absolute top-[5vh] w-full flex flex-row justify-between items-center">
           <div>{formatAmount(Coin)} ₿</div>
           <div>{Score}</div>
         </div>
