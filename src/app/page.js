@@ -733,7 +733,10 @@ export default function Home() {
   useEffect(() => {
     // Prevent default touch behavior globally
     const preventDefaultTouch = (e) => e.preventDefault();
-    document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
+    if (!isShopOpen) {
+      document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
+    }
+
 
     // Generate initial target positions
     setTargetPositions(targetPositions.map(() => generatePosition()));
@@ -748,7 +751,7 @@ export default function Home() {
       document.removeEventListener('touchmove', preventDefaultTouch);
       clearTimeout(loadingTimeout);
     };
-  }, []);
+  }, [isShopOpen]);
 
 
   // Add event listeners for space bar to open shop
@@ -1050,7 +1053,7 @@ export default function Home() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[86vh] top-[14vh] md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[87vh] top-[13vh] md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
           <div className="overflow-scroll p-[2vh] pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-4 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
