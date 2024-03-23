@@ -985,7 +985,7 @@ export default function Home() {
       {/* HUD */}
       <div className="pointer-events-none">
         {/* Coin combo multiplier progress bar */}
-        <div className="backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full md:h-[5vh] h-[7vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}>
+        <div className="backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full md:h-[5vh] h-[6vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}>
           {/* Combo bar filler */}
           <div className={`h-full border-black ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}></div>
           {/* Display current Coin combo multiplier */}
@@ -997,7 +997,7 @@ export default function Home() {
         </div>
 
         {/* Target hit and coin counter */}
-        <div className="text-[4vh] md:text-[7vh] px-[2vw] absolute top-[5vh] w-full flex flex-row justify-between items-center">
+        <div className="md:text-[7vh] px-[2vw] absolute top-[6vh] md:top-[5vh] w-full flex flex-row justify-between items-center">
           <div>{formatAmount(Coin)} ₿</div>
           <div>{Score}</div>
         </div>
