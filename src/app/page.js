@@ -121,7 +121,7 @@ export default function Home() {
 
 
   // Sound volume state
-  const [volume, setVolume] = useState(0);
+  const [volume, setVolume] = useState(0.2);
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
   // game paused state
@@ -1052,14 +1052,13 @@ export default function Home() {
       {showStore && (
         <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-[83.5vh] top-[16.5vh] backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
-          <div className="overflow-auto pt-[4vh] grid grid-cols-3 grid-rows-3 lg:grid-cols-5 lg:grid-rows-3 gap-[2vh] p-[2vh]">
+          <div className="overflow-auto p-[2vh] pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-4 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
 
               return (
-                <div key={item.id} onMouseDown={() => affordable && purchaseItem(item.id)} className={`flex flex-col bg-white bg-opacity-50 rounded-md md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}
-                >
+                <div key={item.id} onMouseDown={() => affordable && purchaseItem(item.id)} className={`flex flex-col bg-white bg-opacity-50 rounded-xl md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}>
                   {/* Item description */}
                   <div className="flex-2 flex justify-center items-center h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
