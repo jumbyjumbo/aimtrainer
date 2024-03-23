@@ -121,7 +121,7 @@ export default function Home() {
 
 
   // Sound volume state
-  const [volume, setVolume] = useState(0.2);
+  const [volume, setVolume] = useState(0);
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
   // game paused state
