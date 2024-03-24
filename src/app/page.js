@@ -995,27 +995,31 @@ export default function Game() {
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
         onMouseDown={(e) => {
+          e.preventDefault(); e.stopPropagation();
           if (!isMobile) {
-            e.preventDefault(); e.stopPropagation(); onTargetMiss(e);
+            onTargetMiss(e);
           }
         }}
         onTouchStart={(e) => {
+          e.preventDefault(); e.stopPropagation();
           if (isMobile) {
-            e.preventDefault(); e.stopPropagation(); onTargetMiss(e);
+            onTargetMiss(e);
           }
         }}
       >
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
-            // onMouseDown={(e) => {
-            //   if (!isMobile) {
-            //     e.preventDefault(); e.stopPropagation(); onTargetHit(targetID, e);
-            //   }
-            // }}
+            onMouseDown={(e) => {
+              e.preventDefault(); e.stopPropagation();
+              if (!isMobile) {
+                onTargetHit(targetID, e);
+              }
+            }}
             onTouchStart={(e) => {
+              e.preventDefault(); e.stopPropagation();
               if (isMobile) {
-                e.preventDefault(); e.stopPropagation(); onTargetHit(targetID, e);
+                onTargetHit(targetID, e);
               }
             }}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
