@@ -525,7 +525,7 @@ export default function Home() {
       hitSound.volume = volume; // Set volume to the current state value
       hitSound.play().catch(error => console.error('Error playing the sound:', error));
     }
-  };
+  }; regeneratePosition
 
 
   // trigger the popup on target hit/miss
@@ -749,7 +749,7 @@ export default function Home() {
       document.removeEventListener('touchmove', preventDefaultTouch);
       clearTimeout(loadingTimeout);
     };
-  }, [isShopOpen]);
+  }, []);
 
 
   // Add event listeners for space bar to open shop
@@ -1051,7 +1051,7 @@ export default function Home() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-screen top-0 md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
           <div className="overflow-hidden p-[2vh] md:pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-5 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
