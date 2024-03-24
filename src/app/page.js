@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { initializeApp } from "firebase/app";
 //db
 import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -25,7 +25,7 @@ const auth = getAuth(app);
 
 
 
-export default function Home() {
+export default function Game() {
 
   const applyItemEffectsBasedOnOwned = (updatedStoreItems) => {
     updatedStoreItems.forEach(item => {
@@ -308,24 +308,76 @@ export default function Home() {
     }
   }, []);
   // Touch event states
-  const [startTouchY, setStartTouchY] = useState(null);
-  // Handler for touch start event
-  const handleTouchStart = (e) => {
-    const touchY = e.touches[0].clientY; // Get the starting Y position
-    setStartTouchY(touchY);
-  };
-  // Handler for touch end event
-  const handleTouchEnd = (e) => {
-    const touchY = e.changedTouches[0].clientY; // Get the ending Y position
-    if (startTouchY != null) {
-      // Determine swipe direction
-      const deltaY = startTouchY - touchY;
-      if (deltaY > 50) { // Swiped upwards
+  const [startTouchPositions, setStartTouchPositions] = useState({});
+  // Modified handleTouchStart to check each touch point
+  // const handleTouchStart = (e) => {
+  //   // Prevent default to avoid scrolling and zooming on the canvas
+  //   e.preventDefault();
+
+  //   // Process each touch point
+  //   Array.from(e.touches).forEach((touch) => {
+  //     const touchPosition = { x: touch.clientX, y: touch.clientY };
+
+  //     // Attempt to hit targets with this touch
+  //     let hitTarget = false;
+  //     targetPositions.forEach((targetPosition, targetID) => {
+  //       if (isTouchOnTarget(touchPosition, targetPosition)) {
+  //         onTargetHit(targetID, touch);
+  //         hitTarget = true;
+  //       }
+  //     });
+
+  //     // If no target was hit, it's potentially the start of a swipe or a miss
+  //     if (!hitTarget) {
+  //       // Store the touch start position for potential swipe detection
+  //       // Consider storing in a Map or Object if tracking swipes per touch point is necessary
+  //       setStartTouchPosition((prevPosition) => ({
+  //         ...prevPosition,
+  //         [touch.identifier]: { x: touch.clientX, y: touch.clientY }
+  //       }));
+  //     }
+  //   });
+  // };
+  // Modified handleTouchEnd to detect swipes and clear stored start positions
+  // const handleTouchEnd = (e) => {
+  //   Array.from(e.changedTouches).forEach((touch) => {
+  //     const endTouchPosition = { x: touch.clientX, y: touch.clientY };
+
+  //     // Retrieve the start position of this touch
+  //     const startTouchPosition = startTouchPositions[touch.identifier];
+
+  //     if (startTouchPosition) {
+  //       const deltaX = endTouchPosition.x - startTouchPosition.x;
+  //       const deltaY = endTouchPosition.y - startTouchPosition.y;
+
+  //       // Determine if the gesture is a swipe
+  //       if (Math.abs(deltaX) >= 10 || Math.abs(deltaY) >= 10) {
+  //         // It's a swipe - handle accordingly
+  //         handleSwipeGesture(deltaX, deltaY);
+  //       } else {
+  //         // It was a tap, but didn't hit any target initially
+  //         onTargetMiss(touch);
+  //       }
+
+  //       // Clear the start position for this touch
+  //       setStartTouchPosition((prevPosition) => {
+  //         const updatedPositions = { ...prevPosition };
+  //         delete updatedPositions[touch.identifier];
+  //         return updatedPositions;
+  //       });
+  //     }
+  //   });
+  // };
+
+  const handleSwipeGesture = (deltaX, deltaY) => {
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      if (deltaY < -50) { // Swiped upwards
         setIsShopOpen(true);
-      } else if (deltaY < -50) { // Swiped downwards
+      } else if (deltaY > 50) { // Swiped downwards
         setIsShopOpen(false);
       }
     }
+    // Implement left/right swipes if needed
   };
   // touch event listeners
   useEffect(() => {
@@ -338,9 +390,7 @@ export default function Home() {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [startTouchY]); // Dependencies
-
-
+  }, []); // Dependencies
 
 
 
@@ -920,8 +970,77 @@ export default function Home() {
 
 
 
+  const canvasRef = useRef(null);
+  const handleTouchStart = useCallback((e) => {
+    if (e.target === canvasRef.current) {
+      e.preventDefault(); // Optional: Prevent default if you want to disable scrolling/zooming within the canvas
+      let touches = e.touches;
 
+      // Track each touch point
+      Array.from(touches).forEach(touch => {
+        const touchPosition = { x: touch.clientX, y: touch.clientY };
 
+        // Check and process target hits
+        targetPositions.forEach((targetPosition, targetID) => {
+          if (isTouchOnTarget(touchPosition, targetPosition)) {
+            onTargetHit(targetID);
+          }
+        });
+
+        // Store start position for swipe detection
+        setStartTouchPositions(prev => ({
+          ...prev,
+          [touch.identifier]: touchPosition
+        }));
+      });
+    }
+  }, [targetPositions, setStartTouchPositions]); // Include dependencies
+
+  const handleTouchEnd = useCallback((e) => {
+    let touches = e.changedTouches;
+
+    Array.from(touches).forEach(touch => {
+      const endTouchPosition = { x: touch.clientX, y: touch.clientY };
+      const startTouchPosition = startTouchPositions[touch.identifier];
+
+      // Calculate movement to detect swipe
+      if (startTouchPosition) {
+        const deltaX = endTouchPosition.x - startTouchPosition.x;
+        const deltaY = endTouchPosition.y - startTouchPosition.y;
+
+        // Process as swipe if movement is large enough and within specific direction
+        if (Math.abs(deltaX) > 50 || Math.abs(deltaY) > 50) {
+          handleSwipeGesture(deltaX, deltaY);
+        } else {
+          // Process as miss if it's not a swipe and the touch didn't start on a target
+          onTargetMiss();
+        }
+
+        // Cleanup touch start position
+        setStartTouchPositions(prev => {
+          const newState = { ...prev };
+          delete newState[touch.identifier];
+          return newState;
+        });
+      }
+    });
+  }, [startTouchPositions, setStartTouchPositions, handleSwipeGesture]);
+
+  // Effect to attach event listeners
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
+
+    return () => {
+      if (canvas) {
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [handleTouchStart, handleTouchEnd]);
 
 
   // loading screen
@@ -945,24 +1064,28 @@ export default function Home() {
     <main className="bg-bliss h-screen w-screen bg-cover bg-center" >
       {/* target spawn canvas */}
       <div
+        ref={canvasRef}
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
-        {...(isMobile ? {
-          onTouchStart: (e) => {
-            e.stopPropagation(); onTargetMiss(e);
-          }
-        } : {
-          onMouseDown: (e) => {
-            e.stopPropagation(); onTargetMiss(e);
-          }
-        })}
       >
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
             {...(isMobile ? {
-              onTouchStart: (e) => {
-                e.stopPropagation(); onTargetHit(targetID, e);
+              handleTouchStart: (e) => {
+                // Iterate over all touches
+                for (let i = 0; i < e.touches.length; i++) {
+                  const touch = e.touches[i];
+                  const touchPosition = { x: touch.clientX, y: touch.clientY };
+
+                  // Check if the touch position hits any target
+                  targetPositions.forEach((targetPosition, targetID) => {
+                    if (isTouchOnTarget(touchPosition, targetPosition)) {
+                      // If a target is hit, call your onTargetHit function
+                      onTargetHit(targetID, touch);
+                    }
+                  });
+                }
               }
             } : {
               onMouseDown: (e) => {
