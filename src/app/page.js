@@ -1022,6 +1022,7 @@ export default function Game() {
                 onTargetHit(targetID, e);
               }
             }}
+            key={targetID}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
