@@ -995,16 +995,9 @@ export default function Game() {
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
         onMouseDown={(e) => {
-          e.preventDefault(); e.stopPropagation();
-          if (!isMobile) {
-            onTargetMiss(e);
-          }
-        }}
-        onTouchStart={(e) => {
-          e.preventDefault(); e.stopPropagation();
-          if (isMobile) {
-            onTargetMiss(e);
-          }
+          e.preventDefault();
+          onTargetMiss(e);
+          e.stopPropagation();
         }}
       >
         {/* target instances */}
