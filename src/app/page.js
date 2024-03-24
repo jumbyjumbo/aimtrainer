@@ -1008,11 +1008,11 @@ export default function Game() {
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
-            onMouseDown={(e) => {
-              if (!isMobile) {
-                e.preventDefault(); e.stopPropagation(); onTargetHit(targetID, e);
-              }
-            }}
+            // onMouseDown={(e) => {
+            //   if (!isMobile) {
+            //     e.preventDefault(); e.stopPropagation(); onTargetHit(targetID, e);
+            //   }
+            // }}
             onTouchStart={(e) => {
               if (isMobile) {
                 e.preventDefault(); e.stopPropagation(); onTargetHit(targetID, e);
