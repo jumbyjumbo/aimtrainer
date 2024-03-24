@@ -995,15 +995,30 @@ export default function Game() {
         ref={canvasRef}
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
-
+        onMouseDown={(e) => {
+          if (!isMobile) {
+            e.preventDefault(); e.stopPropagation(); onTargetMiss(e);
+          }
+        }}
+        onTouchStart={(e) => {
+          if (isMobile) {
+            e.preventDefault(); e.stopPropagation(); onTargetMiss(e);
+          }
+        }}
       >
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
-
-            key={targetID}
-            onMouseDown={(e) => { e.stopPropagation(); onTargetHit(targetID, e); }}
-            onTouchStart={(e) => { e.stopPropagation(); onTargetHit(targetID, e); }}
+            onMouseDown={(e) => {
+              if (!isMobile) {
+                e.preventDefault(); e.stopPropagation(); onTargetHit(targetID, e);
+              }
+            }}
+            onTouchStart={(e) => {
+              if (isMobile) {
+                e.preventDefault(); e.stopPropagation(); onTargetHit(targetID, e);
+              }
+            }}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
