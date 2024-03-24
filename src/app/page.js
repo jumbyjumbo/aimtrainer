@@ -302,95 +302,8 @@ export default function Game() {
     const userAgent = navigator.userAgent.toLowerCase();
     const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
     setIsMobile(mobile);
-
-    if (mobile) {
-      setVolume(0); // Mute sound by default on mobile devices
-    }
   }, []);
-  // Touch event states
-  const [startTouchPositions, setStartTouchPositions] = useState({});
-  // Modified handleTouchStart to check each touch point
-  // const handleTouchStart = (e) => {
-  //   // Prevent default to avoid scrolling and zooming on the canvas
-  //   e.preventDefault();
 
-  //   // Process each touch point
-  //   Array.from(e.touches).forEach((touch) => {
-  //     const touchPosition = { x: touch.clientX, y: touch.clientY };
-
-  //     // Attempt to hit targets with this touch
-  //     let hitTarget = false;
-  //     targetPositions.forEach((targetPosition, targetID) => {
-  //       if (isTouchOnTarget(touchPosition, targetPosition)) {
-  //         onTargetHit(targetID, touch);
-  //         hitTarget = true;
-  //       }
-  //     });
-
-  //     // If no target was hit, it's potentially the start of a swipe or a miss
-  //     if (!hitTarget) {
-  //       // Store the touch start position for potential swipe detection
-  //       // Consider storing in a Map or Object if tracking swipes per touch point is necessary
-  //       setStartTouchPosition((prevPosition) => ({
-  //         ...prevPosition,
-  //         [touch.identifier]: { x: touch.clientX, y: touch.clientY }
-  //       }));
-  //     }
-  //   });
-  // };
-  // Modified handleTouchEnd to detect swipes and clear stored start positions
-  // const handleTouchEnd = (e) => {
-  //   Array.from(e.changedTouches).forEach((touch) => {
-  //     const endTouchPosition = { x: touch.clientX, y: touch.clientY };
-
-  //     // Retrieve the start position of this touch
-  //     const startTouchPosition = startTouchPositions[touch.identifier];
-
-  //     if (startTouchPosition) {
-  //       const deltaX = endTouchPosition.x - startTouchPosition.x;
-  //       const deltaY = endTouchPosition.y - startTouchPosition.y;
-
-  //       // Determine if the gesture is a swipe
-  //       if (Math.abs(deltaX) >= 10 || Math.abs(deltaY) >= 10) {
-  //         // It's a swipe - handle accordingly
-  //         handleSwipeGesture(deltaX, deltaY);
-  //       } else {
-  //         // It was a tap, but didn't hit any target initially
-  //         onTargetMiss(touch);
-  //       }
-
-  //       // Clear the start position for this touch
-  //       setStartTouchPosition((prevPosition) => {
-  //         const updatedPositions = { ...prevPosition };
-  //         delete updatedPositions[touch.identifier];
-  //         return updatedPositions;
-  //       });
-  //     }
-  //   });
-  // };
-
-  const handleSwipeGesture = (deltaX, deltaY) => {
-    if (Math.abs(deltaY) > Math.abs(deltaX)) {
-      if (deltaY < -50) { // Swiped upwards
-        setIsShopOpen(true);
-      } else if (deltaY > 50) { // Swiped downwards
-        setIsShopOpen(false);
-      }
-    }
-    // Implement left/right swipes if needed
-  };
-  // touch event listeners
-  useEffect(() => {
-    // Add touch event listeners
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      // Cleanup event listeners
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, []); // Dependencies
 
 
 
@@ -969,11 +882,26 @@ export default function Game() {
   }, []);
 
 
-
+  // Touch event states
+  const [startTouchPositions, setStartTouchPositions] = useState({});
+  // Ref for the canvas element
   const canvasRef = useRef(null);
+  // Determine the swipe direction based on the larger delta
+  const handleSwipeGesture = (deltaX, deltaY) => {
+    const direction = Math.abs(deltaX) > Math.abs(deltaY) ? (deltaX > 0 ? 'right' : 'left') : (deltaY > 0 ? 'down' : 'up');
+    //swipe actions by direction
+    switch (direction) {
+      case 'up':
+        setIsShopOpen(true);
+        break;
+      default:
+        break;
+    }
+  }
+  // check for all touch points on target + set their start positions
   const handleTouchStart = useCallback((e) => {
     if (e.target === canvasRef.current) {
-      e.preventDefault(); // Optional: Prevent default if you want to disable scrolling/zooming within the canvas
+      e.preventDefault();
       let touches = e.touches;
 
       // Track each touch point
@@ -995,7 +923,7 @@ export default function Game() {
       });
     }
   }, [targetPositions, setStartTouchPositions]); // Include dependencies
-
+  // check for swipe on touch end and miss if not a swipe
   const handleTouchEnd = useCallback((e) => {
     let touches = e.changedTouches;
 
@@ -1067,31 +995,12 @@ export default function Game() {
         ref={canvasRef}
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
+
       >
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
-            {...(isMobile ? {
-              handleTouchStart: (e) => {
-                // Iterate over all touches
-                for (let i = 0; i < e.touches.length; i++) {
-                  const touch = e.touches[i];
-                  const touchPosition = { x: touch.clientX, y: touch.clientY };
-
-                  // Check if the touch position hits any target
-                  targetPositions.forEach((targetPosition, targetID) => {
-                    if (isTouchOnTarget(touchPosition, targetPosition)) {
-                      // If a target is hit, call your onTargetHit function
-                      onTargetHit(targetID, touch);
-                    }
-                  });
-                }
-              }
-            } : {
-              onMouseDown: (e) => {
-                e.stopPropagation(); onTargetHit(targetID, e);
-              }
-            })}
+            onMouseDown={(e) => { e.stopPropagation(); onTargetHit(targetID, e); }}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
