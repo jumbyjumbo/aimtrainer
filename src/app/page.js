@@ -992,7 +992,6 @@ export default function Game() {
     <main className="bg-bliss h-screen w-screen bg-cover bg-center" >
       {/* target spawn canvas */}
       <div
-        ref={canvasRef}
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
         onMouseDown={(e) => {
