@@ -947,16 +947,28 @@ export default function Home() {
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
-        onMouseDown={(e) => {
-          e.stopPropagation(); onTargetMiss(e);
-        }}>
-
+        {...(isMobile ? {
+          onTouchStart: (e) => {
+            e.stopPropagation(); onTargetMiss(e);
+          }
+        } : {
+          onMouseDown: (e) => {
+            e.stopPropagation(); onTargetMiss(e);
+          }
+        })}
+      >
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
-            onMouseDown={(e) => {
-              e.stopPropagation(); onTargetHit(targetID, e);
-            }}
+            {...(isMobile ? {
+              onTouchStart: (e) => {
+                e.stopPropagation(); onTargetHit(targetID, e);
+              }
+            } : {
+              onMouseDown: (e) => {
+                e.stopPropagation(); onTargetHit(targetID, e);
+              }
+            })}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
