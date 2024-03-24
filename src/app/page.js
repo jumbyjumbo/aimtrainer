@@ -1011,16 +1011,9 @@ export default function Game() {
         {targetPositions.map((targetPosition, targetID) => (
           <div
             onMouseDown={(e) => {
-              e.preventDefault(); e.stopPropagation();
-              if (!isMobile) {
-                onTargetHit(targetID, e);
-              }
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault(); e.stopPropagation();
-              if (isMobile) {
-                onTargetHit(targetID, e);
-              }
+              e.preventDefault();
+              onTargetHit(targetID, e);
+              e.stopPropagation();
             }}
             key={targetID}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
