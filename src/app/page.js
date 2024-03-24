@@ -942,7 +942,7 @@ export default function Home() {
 
   // Main game
   return (
-    <main className="bg-bliss h-screen w-screen overflow-hidden bg-cover bg-center" >
+    <main className="bg-bliss h-screen w-screen bg-cover bg-center" >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
@@ -1051,9 +1051,9 @@ export default function Home() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-full top-0 md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
-          <div className="p-[2vh] pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-4 lg:grid-cols-5 lg:grid-rows-3">
+          <div className="overflow-hidden p-[2vh] md:pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-5 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
