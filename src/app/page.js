@@ -190,12 +190,11 @@ export default function Game() {
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 10 },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 10 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 6.81 },
-    { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 4.2 },
-    { id: 5, buff: '+1 ⵙ piercing', baseCost: 42, owned: 0, growthRate: 1.4 },
-    { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 100 },
-    { id: 7, buff: '+10% XP', baseCost: 333, owned: 0, growthRate: 12 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 10 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 10 },
+    { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 10 },
+    { id: 5, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 10 },
+    { id: 6, buff: '+10% XP', baseCost: 111, owned: 0, growthRate: 10 },
   ]);
   // store the next affordable item id
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
@@ -236,6 +235,8 @@ export default function Game() {
   const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
   // max Coin combo limit
   const [maxComboLimit, setMaxComboLimit] = useState(10);
+  // Bot piercing state
+  const [botPiercing, setBotPiercing] = useState(1);
   // target hit interval speed reward multiplier
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
   // item cost reduction rate
@@ -259,7 +260,7 @@ export default function Game() {
   const XPNeededToLevelUp = (Level) => {
     const baseXP = 50; // Base XP needed for the first level
     // Polynomial growth
-    return Math.floor(baseXP + (100 * Math.pow(Level - 1, 2.5)));
+    return Math.floor(baseXP + (100 * Math.pow(Level - 1, 1.5)));
   };
   // handle XP gain and Level up on target hit
   const addXPAndCheckLevelUp = (XPGained) => {
@@ -307,6 +308,7 @@ export default function Game() {
     { id: 2, buff: "+10% ⵙ speed", owned: 0 },
     { id: 3, buff: "+10% ₿", owned: 0 },
     { id: 4, buff: "+10% speed reward", owned: 0 },
+    { id: 5, buff: "+1 ⵙ piercing", owned: 0 }
 
   ]);
 
@@ -327,6 +329,9 @@ export default function Game() {
         break;
       case "+10% speed reward":
         setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.1);
+        break;
+      case '+1 ⵙ piercing':
+        setBotPiercing(prevBotPiercing => prevBotPiercing + 1);
         break;
       default:
         console.log("Invalid upgrade description:", buff);
@@ -566,10 +571,10 @@ export default function Game() {
         addTarget();
         break;
       case '-10% combo decrease':
-        setComboDecreaseRate(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
+        setComboDecreaseRate(prevRate => prevRate * 0.9); //log decrease
         break;
       case '-10% miss penalty':
-        setMissPenaltyPercentage(prevPercentage => applyMultiplicativeChange(prevPercentage, -0.1)); //log decrease
+        setMissPenaltyPercentage(prevPercentage => prevPercentage * 0.9); //log decrease
         break;
       case '+10% target size':
         setTargetSizeMultiplier(prevSize => prevSize + 0.1); //base 10% increase
@@ -577,17 +582,11 @@ export default function Game() {
       case '+1 base XP':
         setBaseXPGainPerHit(prevXPGain => prevXPGain + 1);
         break;
-      case '+10% combo increase':
-        setComboIncreaseMultiplier(prevComboIncreaseMultiplier => prevComboIncreaseMultiplier + 0.1); //base 10% increase
-        break;
       case '+1 max combo':
         setMaxComboLimit(prevLimit => prevLimit + 1);
         break;
       case '+10% XP':
         setXpGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
-        break;
-      case '-10% item cost':
-        setItemCostReductionMultiplier(prevRate => applyMultiplicativeChange(prevRate, -0.1)); //log decrease
         break;
       default: console.log('Invalid item description:', itemBuff);
     }
@@ -640,11 +639,13 @@ export default function Game() {
   };
   // trigger a hit when bot overlaps target
   const checkForBotHit = (botPos) => {
+    let hitsLeft = botPiercing; // Initialize the number of available hits
     for (let targetIndex = targetPositionsRef.current.length - 1; targetIndex >= 0; targetIndex--) {
       const targetPos = targetPositionsRef.current[targetIndex];
       if (doesBotOverlapTarget(botPos, targetPos)) {
         onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y });
-        break; // Stop checking after the first hit is registered
+        hitsLeft--; // Reduce the number of available hits
+        if (hitsLeft <= 0) break;
       }
     }
   };
