@@ -127,12 +127,13 @@ export default function Game() {
   // game paused state
   const [isGamePaused, setIsGamePaused] = useState(false);
 
-
+  // leaderboard open state
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   // Store open state
   const [isShopOpen, setIsShopOpen] = useState(false);
   // render store?
-  const [showStore, setShowStore] = React.useState(false);
+  const [showStore, setShowStore] = useState(false);
   // shop animation effect
   useEffect(() => {
     let timeoutId;
@@ -187,15 +188,14 @@ export default function Game() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 1.5 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.33 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 10 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 10 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 5 },
     { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 6.81 },
     { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 4.2 },
-    { id: 5, buff: '+10% combo increase', baseCost: 42, owned: 0, growthRate: 1.4 },
+    { id: 5, buff: '+1 ⵙ piercing', baseCost: 42, owned: 0, growthRate: 1.4 },
     { id: 6, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 100 },
     { id: 7, buff: '+10% XP', baseCost: 333, owned: 0, growthRate: 12 },
-    { id: 9, buff: '-10% item cost', baseCost: 999, owned: 0, growthRate: 30 },
   ]);
   // store the next affordable item id
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
@@ -257,15 +257,9 @@ export default function Game() {
   const [offeredUpgrades, setOfferedUpgrades] = useState([]);
   // Function to calculate the XP needed to Level up
   const XPNeededToLevelUp = (Level) => {
-    const baseXP = 50; // XP needed for Level 1 to 2
-    const growthFactor = 1.5; // Determines how much more XP is needed for each subsequent Level
-    const eXPonentBase = 1.07; // Determines how much the difficulty increases per Level
-
-    if (Level === 1) {
-      return baseXP;
-    }
-
-    return Math.floor(baseXP * Math.pow(growthFactor, Math.pow(Level, eXPonentBase)));
+    const baseXP = 50; // Base XP needed for the first level
+    // Polynomial growth
+    return Math.floor(baseXP + (100 * Math.pow(Level - 1, 2.5)));
   };
   // handle XP gain and Level up on target hit
   const addXPAndCheckLevelUp = (XPGained) => {
@@ -273,7 +267,6 @@ export default function Game() {
       let newCurrentXP = prevProgress.currentXP + XPGained;
       let currentLevel = prevProgress.currentLevel;
       let XPNeeded = XPNeededToLevelUp(currentLevel);
-
       // Check if the player has enough XP to level up
       if (newCurrentXP >= XPNeeded) {
         newCurrentXP -= XPNeeded;
@@ -285,7 +278,6 @@ export default function Game() {
         // Assuming you have a state to store these 3 upgrades
         setOfferedUpgrades(upgradesToOffer);
       }
-
       return { currentXP: newCurrentXP, currentLevel: currentLevel };
     });
   };
@@ -563,8 +555,10 @@ export default function Game() {
 
   // get current cost of an item depending on how many owned
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
-    return parseFloat((baseCost * Math.pow(growthRate, owned))) * itemCostReductionMultiplier;
+    // Polynomial growth
+    return parseFloat(baseCost * Math.pow(1 + (growthRate * owned), 1.5)) * itemCostReductionMultiplier;
   };
+
   // Function to apply the effects of a purchased item
   const applyPurchasedItem = (itemBuff) => {
     switch (itemBuff) {
@@ -1008,13 +1002,13 @@ export default function Game() {
           <div className="text-[3vh] w-full absolute bottom-[7vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
             {isMobile ? (
               // Display text for mobile users
-              <span>swipe up to shop</span>
+              <div>swipe up to shop</div>
             ) : (
               // Display image and text for non-mobile users
               <>
                 <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
                 <div className="w-[0.5vw]"></div>
-                <span>to shop</span>
+                <div>to shop</div>
               </>
             )}
           </div>
