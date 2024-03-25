@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from "firebase/app";
 //db
 import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -882,11 +882,7 @@ export default function Game() {
   }, []);
 
 
-  // Touch event states
-  const [startTouchPositions, setStartTouchPositions] = useState({});
-  // Ref for the canvas element
-  const canvasRef = useRef(null);
-  // Determine the swipe direction based on the larger delta
+  // Determine the swipe direction based on the swipe direction
   const handleSwipeGesture = (deltaX, deltaY) => {
     const direction = Math.abs(deltaX) > Math.abs(deltaY) ? (deltaX > 0 ? 'right' : 'left') : (deltaY > 0 ? 'down' : 'up');
     //swipe actions by direction
@@ -898,77 +894,27 @@ export default function Game() {
         break;
     }
   }
-  // check for all touch points on target + set their start positions
-  const handleTouchStart = useCallback((e) => {
-    if (e.target === canvasRef.current) {
-      e.preventDefault();
-      let touches = e.touches;
+  // Touch swipe gesture detection
+  const [touchStartPosition, setTouchStartPosition] = useState({ x: 0, y: 0 });
+  // Handle the start of a touch
+  const handleTouchStart = (event) => {
+    const touch = event.touches[0];
+    setTouchStartPosition({ x: touch.clientX, y: touch.clientY });
+  };
+  // Handle the end of a touch
+  const handleTouchEnd = (event) => {
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - touchStartPosition.x;
+    const deltaY = touch.clientY - touchStartPosition.y;
 
-      // Track each touch point
-      Array.from(touches).forEach(touch => {
-        const touchPosition = { x: touch.clientX, y: touch.clientY };
-
-        // Check and process target hits
-        targetPositions.forEach((targetPosition, targetID) => {
-          if (isTouchOnTarget(touchPosition, targetPosition)) {
-            onTargetHit(targetID);
-          }
-        });
-
-        // Store start position for swipe detection
-        setStartTouchPositions(prev => ({
-          ...prev,
-          [touch.identifier]: touchPosition
-        }));
-      });
+    // Check if the swipe is significant
+    if (Math.abs(deltaX) > 50 || Math.abs(deltaY) > 50) {
+      handleSwipeGesture(deltaX, deltaY);
     }
-  }, [targetPositions, setStartTouchPositions]); // Include dependencies
-  // check for swipe on touch end and miss if not a swipe
-  const handleTouchEnd = useCallback((e) => {
-    let touches = e.changedTouches;
+  };
 
-    Array.from(touches).forEach(touch => {
-      const endTouchPosition = { x: touch.clientX, y: touch.clientY };
-      const startTouchPosition = startTouchPositions[touch.identifier];
 
-      // Calculate movement to detect swipe
-      if (startTouchPosition) {
-        const deltaX = endTouchPosition.x - startTouchPosition.x;
-        const deltaY = endTouchPosition.y - startTouchPosition.y;
 
-        // Process as swipe if movement is large enough and within specific direction
-        if (Math.abs(deltaX) > 50 || Math.abs(deltaY) > 50) {
-          handleSwipeGesture(deltaX, deltaY);
-        } else {
-          // Process as miss if it's not a swipe and the touch didn't start on a target
-          onTargetMiss();
-        }
-
-        // Cleanup touch start position
-        setStartTouchPositions(prev => {
-          const newState = { ...prev };
-          delete newState[touch.identifier];
-          return newState;
-        });
-      }
-    });
-  }, [startTouchPositions, setStartTouchPositions, handleSwipeGesture]);
-
-  // Effect to attach event listeners
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-    }
-
-    return () => {
-      if (canvas) {
-        canvas.removeEventListener('touchstart', handleTouchStart);
-        canvas.removeEventListener('touchend', handleTouchEnd);
-      }
-    };
-  }, [handleTouchStart, handleTouchEnd]);
 
 
   // loading screen
@@ -989,7 +935,7 @@ export default function Game() {
 
   // Main game
   return (
-    <main className="bg-bliss h-screen w-screen bg-cover bg-center" >
+    <main className="bg-bliss h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
@@ -1008,7 +954,6 @@ export default function Game() {
               onTargetHit(targetID, e);
               e.stopPropagation();
             }}
-            key={targetID}
             className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
