@@ -159,7 +159,7 @@ export default function Game() {
 
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
   // Ref for target positions
   const targetPositionsRef = useRef(targetPositions);
   // Update the ref when the state changes
@@ -189,9 +189,9 @@ export default function Game() {
   // Store items
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 2 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 2 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 2 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 4 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.2 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 5 },
     { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 2 },
     { id: 5, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 2 },
     { id: 6, buff: '+10% XP', baseCost: 111, owned: 0, growthRate: 2 },
