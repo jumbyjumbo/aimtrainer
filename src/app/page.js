@@ -890,6 +890,9 @@ export default function Game() {
       case 'up':
         setIsShopOpen(true);
         break;
+      case 'down':
+        setIsShopOpen(false);
+        break;
       default:
         break;
     }
