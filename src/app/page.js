@@ -159,7 +159,7 @@ export default function Game() {
 
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
   // Ref for target positions
   const targetPositionsRef = useRef(targetPositions);
   // Update the ref when the state changes
@@ -188,13 +188,13 @@ export default function Game() {
 
   // Store items
   const [storeItems, setStoreItems] = useState([
-    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 10 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 10 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 10 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 10 },
-    { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 10 },
-    { id: 5, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 10 },
-    { id: 6, buff: '+10% XP', baseCost: 111, owned: 0, growthRate: 10 },
+    { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 2 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 2 },
+    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 2 },
+    { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 2 },
+    { id: 5, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 2 },
+    { id: 6, buff: '+10% XP', baseCost: 111, owned: 0, growthRate: 2 },
   ]);
   // store the next affordable item id
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
@@ -235,8 +235,6 @@ export default function Game() {
   const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
   // max Coin combo limit
   const [maxComboLimit, setMaxComboLimit] = useState(10);
-  // Bot piercing state
-  const [botPiercing, setBotPiercing] = useState(1);
   // target hit interval speed reward multiplier
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
   // item cost reduction rate
@@ -305,11 +303,9 @@ export default function Game() {
   const [levelUpUpgrades, setLevelUpUpgrades] = useState([
     { id: 0, buff: "+1 base ₿", owned: 0 },
     { id: 1, buff: "+1 ⵙ", owned: 0 },
-    { id: 2, buff: "+10% ⵙ speed", owned: 0 },
+    { id: 2, buff: "+5% ⵙ speed", owned: 0 },
     { id: 3, buff: "+10% ₿", owned: 0 },
     { id: 4, buff: "+10% speed reward", owned: 0 },
-    { id: 5, buff: "+1 ⵙ piercing", owned: 0 }
-
   ]);
 
   // Function to apply the effects of a level-up upgrade
@@ -321,17 +317,14 @@ export default function Game() {
       case "+1 ⵙ":
         addBot();
         break;
-      case "+10% ⵙ speed":
-        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1);
+      case "+5% ⵙ speed":
+        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.05);
         break;
       case "+10% ₿":
         setCoinGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
       case "+10% speed reward":
         setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.1);
-        break;
-      case '+1 ⵙ piercing':
-        setBotPiercing(prevBotPiercing => prevBotPiercing + 1);
         break;
       default:
         console.log("Invalid upgrade description:", buff);
@@ -639,13 +632,11 @@ export default function Game() {
   };
   // trigger a hit when bot overlaps target
   const checkForBotHit = (botPos) => {
-    let hitsLeft = botPiercing; // Initialize the number of available hits
     for (let targetIndex = targetPositionsRef.current.length - 1; targetIndex >= 0; targetIndex--) {
       const targetPos = targetPositionsRef.current[targetIndex];
       if (doesBotOverlapTarget(botPos, targetPos)) {
         onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y });
-        hitsLeft--; // Reduce the number of available hits
-        if (hitsLeft <= 0) break;
+        break;
       }
     }
   };
@@ -675,7 +666,7 @@ export default function Game() {
     if (!isGamePaused) {
       const intervalId = setInterval(() => {
         moveBotsSequentially();
-      }, 2000 / botSpeedMultiplier); // interval in ms
+      }, 5000 / botSpeedMultiplier); // interval in ms
 
       return () => clearInterval(intervalId);
     }
