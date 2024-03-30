@@ -924,18 +924,13 @@ export default function AimTrainer() {
     );
   }
 
+  // Mobile warning screen
   if (isMobile) {
     return (
       <div className="bg-red-500 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
         {/* game title */}
         <div className="text-[10vh] lg:text-[20vh] leading-none text-center">
-          aim trainer
-        </div>
-        {/* glyphteck studio */}
-        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studiⵙs</div>
-        {/* mobile warning */}
-        <div className="text-[3vh] lg:text-[5vh] leading-none">
-          This game is best played on a desktop or laptop. Please switch to a larger device.
+          mobile not supported
         </div>
       </div>
     );
@@ -1011,17 +1006,9 @@ export default function AimTrainer() {
         { /* can shop indicator */}
         {canAfford && (
           <div className="text-[3vh] w-full absolute bottom-[7vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-            {isMobile ? (
-              // Display text for mobile users
-              <div>swipe up to shop</div>
-            ) : (
-              // Display image and text for non-mobile users
-              <>
-                <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
-                <div className="w-[0.5vw]"></div>
-                <div>to shop</div>
-              </>
-            )}
+            <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
+            <div className="w-[0.5vw]"></div>
+            <div>to shop</div>
           </div>
         )}
 
@@ -1037,7 +1024,6 @@ export default function AimTrainer() {
             <span className="text-[3vh]">{formatAmount(playerProgress.currentXP)}/{XPNeededToLevelUp(playerProgress.currentLevel)}</span>
           </div>
         </div>
-
 
         {/* Coin popups */}
         {CoinPopups.map((popup) => (
