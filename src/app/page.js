@@ -913,7 +913,7 @@ export default function AimTrainer() {
   // loading screen
   if (isLoading) {
     return (
-      <div className="bg-white h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+      <div className="bg-black text-gray-200 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
         {/* game title */}
         <div className="text-[10vh] lg:text-[20vh] leading-none text-center">
           aim trainer
@@ -927,10 +927,10 @@ export default function AimTrainer() {
   // Mobile warning screen
   if (isMobile) {
     return (
-      <div className="bg-red-500 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+      <div className="bg-black text-gray-200 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
         {/* game title */}
-        <div className="text-[10vh] lg:text-[20vh] leading-none text-center">
-          mobile not supported
+        <div className="text-[7vh] lg:text-[15vh] leading-none text-center">
+          mobile not supported.
         </div>
       </div>
     );
