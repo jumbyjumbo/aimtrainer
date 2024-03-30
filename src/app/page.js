@@ -930,7 +930,7 @@ export default function AimTrainer() {
       <div className="bg-black text-gray-200 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
         {/* game title */}
         <div className="text-[7vh] lg:text-[15vh] leading-none text-center">
-          mobile not supported.
+          mobile not suported. desktop only.
         </div>
       </div>
     );
