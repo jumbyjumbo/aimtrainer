@@ -32,6 +32,9 @@ module.exports = {
       },
       backgroundImage: {
         'bliss': "url('/bliss.jpg')",
+        'daymoon': "url('/daymoon.png')",
+        'sunset': "url('/sunset.png')",
+        'xp': "linear-gradient(90deg, rgba(0,177,255,0.45) 0%, rgba(0,82,255,0.75) 100%)",
       },
     },
   },

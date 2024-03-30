@@ -159,7 +159,7 @@ export default function AimTrainer() {
 
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
   // Ref for target positions
   const targetPositionsRef = useRef(targetPositions);
   // Update the ref when the state changes
@@ -921,14 +921,29 @@ export default function AimTrainer() {
         {/* glyphteck studio */}
         <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studiⵙs</div>
       </div>
-
     );
   }
 
+  if (isMobile) {
+    return (
+      <div className="bg-red-500 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+        {/* game title */}
+        <div className="text-[10vh] lg:text-[20vh] leading-none text-center">
+          aim trainer
+        </div>
+        {/* glyphteck studio */}
+        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studiⵙs</div>
+        {/* mobile warning */}
+        <div className="text-[3vh] lg:text-[5vh] leading-none">
+          This game is best played on a desktop or laptop. Please switch to a larger device.
+        </div>
+      </div>
+    );
+  }
 
   // Main game
   return (
-    <main className="bg-bliss h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
+    <main className="bg-gray-200 h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
@@ -1011,8 +1026,8 @@ export default function AimTrainer() {
         )}
 
         {/* XP Progress Bar */}
-        <div className="backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[6vh] md:h-[5vh] bg-[#076beb] bg-opacity-65 flex items-center">
-          <div className={`h-full border-black bg-[#076beb] bg-opacity-50 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
+        <div className="backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[6vh] md:h-[5vh] bg-xp bg-opacity-65 flex items-center">
+          <div className={`h-full border-black bg-xp bg-opacity-50 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
           {/* Display Level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
             {playerProgress.currentLevel > 1 && <div className="text-[3vh]">Level {playerProgress.currentLevel}</div>}
