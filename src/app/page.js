@@ -24,8 +24,8 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 
-
-export default function Game() {
+// main component (full app)
+export default function AimTrainer() {
 
   const applyItemEffectsBasedOnOwned = (updatedStoreItems) => {
     updatedStoreItems.forEach(item => {
@@ -190,11 +190,11 @@ export default function Game() {
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
     { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 4 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 3.33, owned: 0, growthRate: 1.2 },
-    { id: 3, buff: '+10% target size', baseCost: 6.9, owned: 0, growthRate: 5 },
-    { id: 4, buff: '+1 base XP', baseCost: 11, owned: 0, growthRate: 2 },
-    { id: 5, buff: '+1 max combo', baseCost: 99, owned: 0, growthRate: 2 },
-    { id: 6, buff: '+10% XP', baseCost: 111, owned: 0, growthRate: 2 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 0.99, owned: 0, growthRate: 1.09 },
+    { id: 3, buff: '+10% target size', baseCost: 2.22, owned: 0, growthRate: 5 },
+    { id: 4, buff: '+1 base XP', baseCost: 3.33, owned: 0, growthRate: 2 },
+    { id: 5, buff: '+10% XP', baseCost: 10, owned: 0, growthRate: 2 },
+    { id: 6, buff: '+1 max combo', baseCost: 111, owned: 0, growthRate: 2 },
   ]);
   // store the next affordable item id
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
@@ -234,7 +234,7 @@ export default function Game() {
   // combo increase multiplier
   const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
   // max Coin combo limit
-  const [maxComboLimit, setMaxComboLimit] = useState(10);
+  const [maxComboLimit, setMaxComboLimit] = useState(3);
   // target hit interval speed reward multiplier
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
   // item cost reduction rate
@@ -372,11 +372,18 @@ export default function Game() {
       return amount.toFixed(2);
     }
   };
-  // Generalized function for applying a multiplicative change %
-  const applyMultiplicativeChange = (currentValue, changePercentage = 0.1) => {
-    // For reduction, ie -10%, changePercentage should be negative
-    return currentValue * (1 + changePercentage);
+
+
+  // Function to add a new target
+  const addTarget = () => {
+    setTargetPositions(prevPositions => [...prevPositions, generateTargetPosition()]);
   };
+  const removeTarget = () => {
+    if (targetPositions.length > 1) { // Ensure at least one target remains
+      setTargetPositions(targetPositions.slice(0, -1));
+    }
+  };
+
 
 
   // Function to generate a random position on the screen
@@ -391,23 +398,20 @@ export default function Game() {
     // Return the calculated position.
     return { x, y };
   };
+
+  // New function for generating non-overlapping target positions
+  const generateTargetPosition = () => {
+    let newPosition = generatePosition();
+    return newPosition;
+  };
   // regenerate position for a single target
-  const regeneratePosition = (targetID) => {
+  const regenerateTargetPosition = (targetID) => {
     setTargetPositions(prevPositions =>
-      prevPositions.map((pos, index) => index === targetID ? generatePosition() : pos)
+      prevPositions.map((pos, index) => index === targetID ? generateTargetPosition() : pos)
     );
   };
 
 
-  // Function to add a new target
-  const addTarget = () => {
-    setTargetPositions(prevPositions => [...prevPositions, generatePosition()]);
-  };
-  const removeTarget = () => {
-    if (targetPositions.length > 1) { // Ensure at least one target remains
-      setTargetPositions(targetPositions.slice(0, -1));
-    }
-  };
 
 
 
@@ -478,7 +482,7 @@ export default function Game() {
       hitSound.volume = volume; // Set volume to the current state value
       hitSound.play().catch(error => console.error('Error playing the sound:', error));
     }
-  }; regeneratePosition
+  };
 
 
   // trigger the popup on target hit/miss
@@ -514,7 +518,7 @@ export default function Game() {
     playHitSound();
 
     // Remove the target and add a new one
-    regeneratePosition(targetID);
+    regenerateTargetPosition(targetID);
     // Increase the target hit counter
     setScore(prevCount => prevCount + 1);
     const finalCoinEarned = targetHitCoinReward();
@@ -686,7 +690,7 @@ export default function Game() {
 
 
     // Generate initial target positions
-    setTargetPositions(targetPositions.map(() => generatePosition()));
+    setTargetPositions(targetPositions.map(() => generateTargetPosition()));
 
     // Remove loading screen
     const loadingTimeout = setTimeout(() => {
@@ -976,17 +980,17 @@ export default function Game() {
           {/* Combo bar filler */}
           <div className={`h-full border-black ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}></div>
           {/* Display current Coin combo multiplier */}
-          {combo > 1 && (
-            <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
-              <span className="text-[3vh]">combo <span style={{ textTransform: 'lowercase' }}>x</span>{formatAmount(combo)}</span>
-            </div>
-          )}
+          {/* Display current Coin combo multiplier */}
+          <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
+            <span className="text-[3vh]">combo <span style={{ textTransform: 'lowercase' }}>x</span>{combo > 1 ? formatAmount(combo) : '1'}</span>
+          </div>
+
         </div>
 
         {/* Target hit and coin counter */}
         <div className="md:text-[7vh] px-[2vw] absolute top-[6vh] md:top-[5vh] w-full flex flex-row justify-between items-center">
-          <div>{formatAmount(Coin)} ₿</div>
-          <div>{Score}</div>
+          {Coin > 0 && <div>{formatAmount(Coin)} ₿</div>}
+          {Score > 0 && <div>{Score}</div>}
         </div>
 
         { /* can shop indicator */}
@@ -1011,7 +1015,7 @@ export default function Game() {
           <div className={`h-full border-black bg-[#076beb] bg-opacity-50 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
           {/* Display Level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
-            <span className="text-[3vh]">Level {playerProgress.currentLevel}</span>
+            {playerProgress.currentLevel > 1 && <div className="text-[3vh]">Level {playerProgress.currentLevel}</div>}
           </div>
           {/* Display current XP in the middle of the bar */}
           <div className="absolute left-0 right-0 h-full flex items-center justify-center">
