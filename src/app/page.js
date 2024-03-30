@@ -892,7 +892,15 @@ export default function AimTrainer() {
 
 
 
-
+  // State to determine if the user is on a mobile device
+  const [isMobile, setIsMobile] = useState(false);
+  // check if user is on mobile
+  useEffect(() => {
+    // Detect mobile users
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    setIsMobile(mobile);
+  }, []);
 
   // loading screen
   if (isLoading) {
@@ -907,17 +915,6 @@ export default function AimTrainer() {
       </div>
     );
   }
-
-
-  // State to determine if the user is on a mobile device
-  const [isMobile, setIsMobile] = useState(false);
-  // check if user is on mobile
-  useEffect(() => {
-    // Detect mobile users
-    const userAgent = navigator.userAgent.toLowerCase();
-    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-    setIsMobile(mobile);
-  }, []);
 
   // Mobile warning screen
   if (isMobile) {
