@@ -27,6 +27,21 @@ const auth = getAuth(app);
 // main component (full app)
 export default function AimTrainer() {
 
+  // Function to fetch game data from Firestore
+  const fetchGameData = async (userId) => {
+    const docRef = doc(db, 'players', userId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      console.log('Game data retrieved from Firestore:', data);
+      return data; // Return the fetched data
+    } else {
+      console.log("No saved data found in Firestore");
+      return null; // Return null to indicate no data was found
+    }
+  };
+  // apply item effects
   const applyItemEffectsBasedOnOwned = (updatedStoreItems) => {
     updatedStoreItems.forEach(item => {
       for (let i = 0; i < item.owned; i++) {
@@ -34,6 +49,7 @@ export default function AimTrainer() {
       }
     });
   };
+  // apply level up effects
   const applyLevelUpEffectsBasedOnOwned = (updatedLevelUpUpgrades) => {
     updatedLevelUpUpgrades.forEach(upgrade => {
       for (let i = 0; i < upgrade.owned; i++) {
@@ -41,83 +57,71 @@ export default function AimTrainer() {
       }
     });
   };
-  // Function to fetch game data from Firestore and set it to the state
-  const fetchGameData = async (userId) => {
-    const docRef = doc(db, 'players', userId);
-    const docSnap = await getDoc(docRef);
+  // apply game data to current game state
+  const applyGameData = (data) => {
+    // Set basic game data
+    setScore(data.score);
+    setCoin(data.coin);
+    setPlayerProgress({ currentXP: data.xp, currentLevel: data.level });
+    setVolume(data.volume);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      console.log('Game data retrieved:', data);
+    // Update the store items with the loaded data
+    const updatedStoreItems = storeItems.map(item => {
+      const loadedItem = data.storeItems.find(loadedItem => loadedItem.id === item.id);
+      return { ...item, owned: loadedItem ? loadedItem.owned : item.owned };
+    });
+    setStoreItems(updatedStoreItems);
 
-      // set game data to user's saved data
-      setScore(data.score);
-      setCoin(data.coin);
-      setPlayerProgress({ currentXP: data.xp, currentLevel: data.level });
-      setVolume(data.volume);
+    // Update the level up upgrades with the loaded data
+    const updatedLevelUpUpgrades = levelUpUpgrades.map(upgrade => {
+      const loadedUpgrade = data.levelUpUpgrades.find(loadedUpgrade => loadedUpgrade.id === upgrade.id);
+      return { ...upgrade, owned: loadedUpgrade ? loadedUpgrade.owned : 0 };
+    });
+    setLevelUpUpgrades(updatedLevelUpUpgrades);
 
+    // Apply the effects of the purchased items based on the loaded data
+    applyItemEffectsBasedOnOwned(updatedStoreItems);
+    applyLevelUpEffectsBasedOnOwned(updatedLevelUpUpgrades);
+  };
+  // set game data on load from local storage or firestore (or new game if none found)
+  const initializeGameData = async (userId) => {
+    // Attempt to load game data from Local Storage first
+    const gameDataString = localStorage.getItem('gameData');
+    const localGameData = gameDataString ? JSON.parse(gameDataString) : null;
 
-      // Update the store items with the loaded data
-      const updatedStoreItems = storeItems.map(item => {
-        const loadedItem = data.storeItems.find(loadedItem => loadedItem.id === item.id);
-        return { ...item, owned: loadedItem ? loadedItem.owned : item.owned };
-      });
-      setStoreItems(updatedStoreItems);
-
-      // Update the level up upgrades with the loaded data
-      const updatedLevelUpUpgrades = levelUpUpgrades.map(upgrade => {
-        const loadedUpgrade = data.levelUpUpgrades.find(loadedUpgrade => loadedUpgrade.id === upgrade.id);
-        return { ...upgrade, owned: loadedUpgrade ? loadedUpgrade.owned : 0 };
-      });
-      setLevelUpUpgrades(updatedLevelUpUpgrades);
-
-      // Apply the effects of the purchased items based on the loaded data
-      applyItemEffectsBasedOnOwned(updatedStoreItems);
-      applyLevelUpEffectsBasedOnOwned(updatedLevelUpUpgrades);
-
-
+    if (localGameData) {
+      // Initialize game state with local game data
+      console.log('Initializing game from Local Storage data');
+      applyGameData(localGameData);
     } else {
-      console.log("no saved data found");
-      // no need to change anything, data is already set to default
+      console.log('Local Storage data not found, fetching from Firestore');
+      const firestoreData = await fetchGameData(userId);
+      if (firestoreData) {
+        console.log('Initializing game from Firestore data');
+        applyGameData(firestoreData);
+      } else {
+        console.log('No game data found. new game initialized');
+      }
     }
   };
-  // auto create user on load
+  // auto create user on load and load game data
   useEffect(() => {
     // Check for an authenticated user
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         console.log('User is signed in:', user.uid);
-        // Fetch the user's game data and set it to the state
-        fetchGameData(user.uid);
+        // Initialize the user's game data (either from Local Storage or Firestore)
+        await initializeGameData(user.uid);
+        setIsLoading(false); // Set the app as loaded
       } else {
-        // No user is signed in, sign in anonymously
-        signInAnonymously(auth).then(() => {
-          console.log('Signed in anonymously');
-        }).catch((error) => {
-          console.error('Error signing in anonymously:', error.message);
-        });
+        console.log('No user is signed in, signing in anonymously');
+        signInAnonymously(auth)
+          .then(() => console.log('Signed in anonymously'))
+          .catch(error => console.error('Error signing in anonymously:', error.message));
       }
     });
-
     return () => unsubscribe(); // Clean up the subscription
   }, []);
-  // Function to save game data to Firestore
-  const autosaveGame = async (gameData) => {
-    if (auth.currentUser) {
-      const docRef = doc(db, 'players', auth.currentUser.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        // Update existing document
-        await updateDoc(docRef, gameData);
-        console.log('Game data updated for user ', auth.currentUser.uid);
-      } else {
-        // Document does not exist, create a new one with gameData
-        await setDoc(docRef, gameData);
-        console.log('New document created with current data for user', auth.currentUser.uid);
-      }
-    }
-  };
 
 
   // Sound volume state
@@ -672,19 +676,12 @@ export default function AimTrainer() {
     const preventDefaultTouch = (e) => e.preventDefault();
     document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
 
-
     // Generate initial target positions
     setTargetPositions(targetPositions.map(() => generateTargetPosition()));
-
-    // Remove loading screen
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
 
     // cleanup / remove event listeners
     return () => {
       document.removeEventListener('touchmove', preventDefaultTouch);
-      clearTimeout(loadingTimeout);
     };
   }, []);
 
@@ -830,11 +827,9 @@ export default function AimTrainer() {
     volumeRef.current = volume;
 
   }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume]);
-  //auto save game data on interval
+  //local storage auto save in real time
   useEffect(() => {
-    const autosaveAction = () => {
-
-      // Create a game data object with the current values of the refs
+    if (!isLoading) {
       const gameData = {
         score: scoreRef.current,
         coin: coinRef.current,
@@ -844,16 +839,48 @@ export default function AimTrainer() {
         levelUpUpgrades: levelUpUpgradesRef.current.map(upgrade => ({ id: upgrade.id, owned: upgrade.owned })),
         volume: volumeRef.current,
       };
+      // Update Local Storage in real-time
+      localStorage.setItem('gameData', JSON.stringify(gameData));
+    }
 
-      // Autosave the game data
-      autosaveGame(gameData)
-        .then(() => console.log('Autosaved game data at', new Date().toLocaleTimeString()))
-        .catch(error => console.error('Error autosaving game data:', error));
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume]);
+  // Function to save game data to Firestore
+  const autosaveGame = async (gameData) => {
+    if (auth.currentUser) {
+      const docRef = doc(db, 'players', auth.currentUser.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        // Update existing document
+        await updateDoc(docRef, gameData);
+        console.log('Game data updated for user ', auth.currentUser.uid);
+      } else {
+        // Document does not exist, create a new one with gameData
+        await setDoc(docRef, gameData);
+        console.log('New document created with current data for user', auth.currentUser.uid);
+      }
+    }
+  };
+  //auto save game data on interval to firestore
+  useEffect(() => {
+    const autosaveAction = () => {
+      // Fetch the latest game data from Local Storage
+      const gameDataString = localStorage.getItem('gameData');
+      const gameData = JSON.parse(gameDataString);
+
+      // Check if gameData is not null
+      if (gameData) {
+        // Autosave the game data to Firestore
+        autosaveGame(gameData)
+          .then(() => console.log('Autosaved game data to Firestore at', new Date().toLocaleTimeString()))
+          .catch(error => console.error('Error autosaving game data to Firestore:', error));
+      }
     };
 
-    const autosaveInterval = setInterval(autosaveAction, 60000); //interval in ms
+    const autosaveInterval = setInterval(autosaveAction, 60000); // 1-minute interval
     return () => clearInterval(autosaveInterval);
   }, []);
+
 
 
   // Determine the swipe direction based on the swipe direction
@@ -994,7 +1021,7 @@ export default function AimTrainer() {
 
         {/* Target hit and coin counter */}
         <div className="md:text-[7vh] px-[2vw] absolute top-[6vh] md:top-[5vh] w-full flex flex-row justify-between items-center">
-          {Coin > 0 && <div>{formatAmount(Coin)} ₿</div>}
+          {Coin > 0 ? <div>{formatAmount(Coin)} ₿</div> : <div className="flex-grow"></div>}
           {Score > 0 && <div>{Score}</div>}
         </div>
 
