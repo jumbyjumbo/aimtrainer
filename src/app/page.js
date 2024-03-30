@@ -928,9 +928,12 @@ export default function AimTrainer() {
   if (isMobile) {
     return (
       <div className="bg-black text-gray-200 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
-        {/* game title */}
+        {/* mobile warning */}
         <div className="text-[7vh] lg:text-[15vh] leading-none text-center">
-          mobile not suported. desktop only.
+          mobile not suported
+        </div>
+        <div className="text-[4vh] lg:text-[10vh] leading-none text-center">
+          desktop only
         </div>
       </div>
     );
