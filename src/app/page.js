@@ -163,7 +163,7 @@ export default function AimTrainer() {
 
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1000).fill().map(() => ({ x: 0, y: 0 })));
+  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
   // Ref for target positions
   const targetPositionsRef = useRef(targetPositions);
   // Update the ref when the state changes
@@ -181,7 +181,7 @@ export default function AimTrainer() {
   //  Coin combo multiplier in integer
   const [combo, setCombo] = useState(0);
   // State to track the amount of Coin the player has
-  const [Coin, setCoin] = useState(0);
+  const [Coin, setCoin] = useState(99999999);
 
   //  track ontargethit/miss Coin popups
   const [CoinPopups, setCoinPopups] = useState([]);
@@ -960,7 +960,7 @@ export default function AimTrainer() {
 
   // Main game
   return (
-    <main className="bg-gray-200 h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
+    <main className="bg-bliss h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
