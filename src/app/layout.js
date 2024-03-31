@@ -8,7 +8,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" style={{ cursor: "url('/reddot.png') 32 32, auto" }}>
-      <body className='bg-black select-none text-[5vh] font-helvetica uppercase font-bold overflow-hidden'>{children}</body>
+      <body className='bg-black text-white select-none text-[5vh] font-helvetica uppercase font-bold overflow-hidden'>{children}</body>
     </html>
   );
 }
