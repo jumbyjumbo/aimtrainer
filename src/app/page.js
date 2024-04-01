@@ -957,7 +957,7 @@ export default function AimTrainer() {
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* mobile warning */}
           <div className="font-helvetica text-[7vh] lg:text-[15vh] leading-none text-center">
-            mⵙbile nⵙt supⵙrted
+            m0bile n0t sup0rted
           </div>
           {/* desktop only */}
           <div className="font-helvetica text-[4vh] lg:text-[10vh] leading-none text-center">
