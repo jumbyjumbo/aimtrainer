@@ -936,7 +936,7 @@ export default function AimTrainer() {
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* game title */}
           < div className="text-[10vh] lg:text-[20vh] leading-none text-center" >
-            a1m tra1ner
+            aim trainer
           </div >
           {/* glyphteck studio */}
           <div div className="text-[3vh] lg:text-[5vh] leading-none" >
@@ -957,7 +957,7 @@ export default function AimTrainer() {
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* mobile warning */}
           <div className="font-helvetica text-[8vh] lg:text-[15vh] leading-none text-center">
-            m0bile n0t 5upp0rted
+            m0bile n0t supp0rted
           </div>
           {/* desktop only */}
           <div className="font-helvetica text-[3vh] lg:text-[5vh] leading-none text-center">
