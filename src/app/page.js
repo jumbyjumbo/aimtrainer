@@ -956,11 +956,11 @@ export default function AimTrainer() {
         </video>
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* mobile warning */}
-          <div className="font-helvetica text-[7vh] lg:text-[15vh] leading-none text-center">
-            m0bile n0t sup0rted
+          <div className="font-helvetica text-[10vh] lg:text-[20vh] leading-none text-center">
+            m0bile not sup0rted
           </div>
           {/* desktop only */}
-          <div className="font-helvetica text-[4vh] lg:text-[10vh] leading-none text-center">
+          <div className="font-helvetica text-[3vh] lg:text-[5vh] leading-none text-center">
             desktⵙp ⵙnly
           </div>
         </div>
