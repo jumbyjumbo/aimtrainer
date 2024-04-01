@@ -238,7 +238,7 @@ export default function AimTrainer() {
   // combo increase multiplier
   const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
   // max Coin combo limit
-  const [maxComboLimit, setMaxComboLimit] = useState(3);
+  const [maxComboLimit, setMaxComboLimit] = useState(5);
   // target hit interval speed reward multiplier
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
   // item cost reduction rate
@@ -932,13 +932,17 @@ export default function AimTrainer() {
   // loading screen
   if (isLoading) {
     return (
-      <div className="bg-black text-gray-200 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
-        {/* game title */}
-        <div className="text-[10vh] lg:text-[20vh] leading-none text-center">
-          aim trainer
+      <div className="h-screen w-screen overflow-hidden ">
+        <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
+          {/* game title */}
+          < div className="text-[10vh] lg:text-[20vh] leading-none text-center" >
+            aim trainer
+          </div >
+          {/* glyphteck studio */}
+          <div div className="text-[3vh] lg:text-[5vh] leading-none" >
+            by glyphteck studiⵙs
+          </div>
         </div>
-        {/* glyphteck studio */}
-        <div className="text-[3vh] lg:text-[5vh] leading-none">by glyphteck studiⵙs</div>
       </div>
     );
   }
@@ -946,13 +950,19 @@ export default function AimTrainer() {
   // Mobile warning screen
   if (isMobile) {
     return (
-      <div className="bg-black text-gray-200 h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
-        {/* mobile warning */}
-        <div className="text-[7vh] lg:text-[15vh] leading-none text-center">
-          mobile not suported
-        </div>
-        <div className="text-[4vh] lg:text-[10vh] leading-none text-center">
-          desktop only
+      <div className="h-screen w-screen overflow-hidden ">
+        <video autoPlay muted loop playsInline className='absolute top-0 left-0 opacity-45 w-full h-full object-cover'>
+          <source src="bgaimtrainer.mp4" type="video/mp4" />
+        </video>
+        <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
+          {/* mobile warning */}
+          <div className="text-[7vh] lg:text-[15vh] leading-none text-center">
+            mobile not suported
+          </div>
+          {/* desktop only */}
+          <div className="text-[4vh] lg:text-[10vh] leading-none text-center">
+            desktop only
+          </div>
         </div>
       </div>
     );
@@ -960,7 +970,7 @@ export default function AimTrainer() {
 
   // Main game
   return (
-    <main className="bg-bliss h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
+    <main className="h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
@@ -971,6 +981,9 @@ export default function AimTrainer() {
           e.stopPropagation();
         }}
       >
+        <video autoPlay muted loop playsInline className='opacity-45 w-full h-full object-cover'>
+          <source src="bgaimtrainer.mp4" type="video/mp4" />
+        </video>
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
