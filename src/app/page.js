@@ -950,17 +950,17 @@ export default function AimTrainer() {
   // Mobile warning screen
   if (isMobile) {
     return (
-      <div className="h-screen w-screen overflow-hidden ">
+      <div className="h-screen w-screen overflow-hidden font-helvetica">
         <video autoPlay muted loop playsInline className='absolute top-0 left-0 blur-md opacity-85 w-full h-full object-cover'>
           <source src="bgaimtrainer.mp4" type="video/mp4" />
         </video>
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* mobile warning */}
-          <div className="text-[7vh] lg:text-[15vh] leading-none text-center">
+          <div className="font-helvetica text-[7vh] lg:text-[15vh] leading-none text-center">
             mⵙbile nⵙt supⵙrted
           </div>
           {/* desktop only */}
-          <div className="text-[4vh] lg:text-[10vh] leading-none text-center">
+          <div className="font-helvetica text-[4vh] lg:text-[10vh] leading-none text-center">
             desktⵙp ⵙnly
           </div>
         </div>
@@ -970,7 +970,7 @@ export default function AimTrainer() {
 
   // Main game
   return (
-    <main className="h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
+    <main className="bg-purple-200 h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
