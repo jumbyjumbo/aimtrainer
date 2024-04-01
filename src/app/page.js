@@ -957,11 +957,11 @@ export default function AimTrainer() {
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* mobile warning */}
           <div className="text-[7vh] lg:text-[15vh] leading-none text-center">
-            mobile not suported
+            mⵙbile nⵙt supⵙrted
           </div>
           {/* desktop only */}
           <div className="text-[4vh] lg:text-[10vh] leading-none text-center">
-            desktop only
+            desktⵙp ⵙnly
           </div>
         </div>
       </div>
@@ -974,14 +974,14 @@ export default function AimTrainer() {
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
-        className="backdrop-blur-lg h-screen w-screen absolute overflow-hidden"
+        className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
         onMouseDown={(e) => {
           e.preventDefault();
           onTargetMiss(e);
           e.stopPropagation();
         }}
       >
-        <video autoPlay muted loop playsInline className='blur-md opacity-45 w-full h-full object-cover'>
+        <video autoPlay muted loop playsInline className='blur-md opacity-30 w-full h-full object-cover'>
           <source src="bgaimtrainer.mp4" type="video/mp4" />
         </video>
         {/* target instances */}
