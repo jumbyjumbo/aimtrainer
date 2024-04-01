@@ -956,8 +956,8 @@ export default function AimTrainer() {
         </video>
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* mobile warning */}
-          <div className="font-helvetica text-[10vh] lg:text-[20vh] leading-none text-center">
-            m0bile not sup0rted
+          <div className="font-helvetica text-[8vh] lg:text-[15vh] leading-none text-center">
+            m0bile not supp0rted
           </div>
           {/* desktop only */}
           <div className="font-helvetica text-[3vh] lg:text-[5vh] leading-none text-center">
@@ -970,7 +970,7 @@ export default function AimTrainer() {
 
   // Main game
   return (
-    <main className="bg-purple-200 h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
+    <main className="h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
