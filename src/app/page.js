@@ -951,7 +951,7 @@ export default function AimTrainer() {
   if (isMobile) {
     return (
       <div className="h-screen w-screen overflow-hidden font-helvetica">
-        <video autoPlay muted loop playsInline className='absolute top-0 left-0 blur-md w-full h-full object-cover'>
+        <video autoPlay muted loop playsInline className='absolute top-0 left-0 blur-md opacity-60 w-full h-full object-fill'>
           <source src="bgaimtrainer.mp4" type="video/mp4" />
         </video>
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
