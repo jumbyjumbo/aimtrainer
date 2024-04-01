@@ -1,4 +1,9 @@
 /** @type {import('tailwindcss').Config} */
+
+const shadowOpacity = 0.25;
+const pixelSize = 15; // Variable for pixel size
+
+
 module.exports = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -34,7 +39,19 @@ module.exports = {
         'bliss': "url('/bliss.jpg')",
         'daymoon': "url('/daymoon.png')",
         'sunset': "url('/sunset.png')",
-        'xp': "linear-gradient(90deg, rgba(0,177,255,0.45) 0%, rgba(0,82,255,0.75) 100%)",
+        'xp': "linear-gradient(90deg, rgba(0,177,255,0.2) 0%, rgba(0,82,255,0.3) 100%)",
+      },
+      boxShadow: {
+        'simple': `0 0 ${pixelSize * 6}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'simpleinset': `inset 0 0 ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity * 3})`,
+        'topshadow': `0px -${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'bottomshadow': `0px ${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'leftshadow': `-${pixelSize}px 0px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'rightshadow': `${pixelSize}px 0px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'fullshadow': `0px -${pixelSize * 0.5}px ${pixelSize * 0.5}px rgba(0, 0, 0, ${shadowOpacity * 0.5}), 0px ${pixelSize * 0.5}px ${pixelSize * 0.5}px rgba(0, 0, 0, ${shadowOpacity * 0.5})`,
+        'topinsetshadow': `inset 0px ${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'bottominsetshadow': `inset 0px -${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
+        'doubleinsteshadow': `inset 0px ${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity}), inset 0px -${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
       },
     },
   },

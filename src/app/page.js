@@ -950,17 +950,17 @@ export default function AimTrainer() {
   // Mobile warning screen
   if (isMobile) {
     return (
-      <div className="h-screen w-screen overflow-hidden font-helvetica">
+      <div className="h-screen w-screen overflow-hidden">
         <video autoPlay muted loop playsInline className='absolute top-0 left-0 blur-md opacity-60 w-full h-full object-fill'>
           <source src="bgaimtrainer.mp4" type="video/mp4" />
         </video>
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* mobile warning */}
-          <div className="font-helvetica text-[8vh] lg:text-[15vh] leading-none text-center">
+          <div className="text-[8vh] lg:text-[15vh] leading-none text-center">
             m0bile n0t supp0rted
           </div>
           {/* desktop only */}
-          <div className="font-helvetica text-[3vh] lg:text-[5vh] leading-none text-center">
+          <div className="text-[3vh] lg:text-[5vh] leading-none text-center">
             desktⵙp ⵙnly
           </div>
         </div>
@@ -1021,9 +1021,9 @@ export default function AimTrainer() {
       {/* HUD */}
       <div className="pointer-events-none">
         {/* Coin combo multiplier progress bar */}
-        <div className="backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full md:h-[5vh] h-[6vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}>
+        <div className="shadow-bottomshadow backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full md:h-[5vh] h-[6vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.4)')}` }}>
           {/* Combo bar filler */}
-          <div className={`h-full border-black ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.65)')}` }}></div>
+          <div className={`h-full border-black ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.5)')}` }}></div>
           {/* Display current Coin combo multiplier */}
           {/* Display current Coin combo multiplier */}
           <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
@@ -1048,7 +1048,7 @@ export default function AimTrainer() {
         )}
 
         {/* XP Progress Bar */}
-        <div className="backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[6vh] md:h-[5vh] bg-xp bg-opacity-65 flex items-center">
+        <div className="shadow-topshadow backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[6vh] md:h-[5vh] bg-xp bg-opacity-65 flex items-center">
           <div className={`h-full border-black bg-xp bg-opacity-50 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
           {/* Display Level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
@@ -1077,7 +1077,7 @@ export default function AimTrainer() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-screen top-0 md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} shadow-topshadow absolute w-screen h-screen top-0 md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
           <div className="overflow-hidden p-[2vh] md:pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-5 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
@@ -1085,7 +1085,7 @@ export default function AimTrainer() {
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
 
               return (
-                <div key={item.id} onMouseDown={() => affordable && purchaseItem(item.id)} className={`flex flex-col bg-white bg-opacity-50 rounded-xl md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}>
+                <div key={item.id} onMouseUp={() => affordable && purchaseItem(item.id)} className={`shadow-2xl flex flex-col bg-white bg-opacity-50 rounded-xl md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}>
                   {/* Item description */}
                   <div className="flex-2 flex justify-center items-center h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
@@ -1107,8 +1107,8 @@ export default function AimTrainer() {
             {offeredUpgrades.map((upgrade, index) => (
               <div
                 key={upgrade.id}
-                className="bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
-                onClick={() => selectLevelUpUpgrade(upgrade)}
+                className="bg-white shadow-2xl bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
+                onMouseUp={() => selectLevelUpUpgrade(upgrade)}
               >
                 {upgrade.buff}
               </div>
