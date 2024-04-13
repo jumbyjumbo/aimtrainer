@@ -164,6 +164,7 @@ export default function AimTrainer() {
 
   // target positions
   const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
+  const [ghostTargets, setGhostTargets] = useState([]);
   // Ref for target positions
   const targetPositionsRef = useRef(targetPositions);
   // Update the ref when the state changes
@@ -193,12 +194,12 @@ export default function AimTrainer() {
   // Store items
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 4 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
     { id: 2, buff: '-10% miss penalty', baseCost: 0.99, owned: 0, growthRate: 1.09 },
-    { id: 3, buff: '+10% target size', baseCost: 2.22, owned: 0, growthRate: 5 },
+    { id: 3, buff: '+10% target size', baseCost: 2.22, owned: 0, growthRate: 50 },
     { id: 4, buff: '+1 base XP', baseCost: 3.33, owned: 0, growthRate: 2 },
     { id: 5, buff: '+10% XP', baseCost: 10, owned: 0, growthRate: 2 },
-    { id: 6, buff: '+1 max combo', baseCost: 111, owned: 0, growthRate: 2 },
+    { id: 6, buff: '+1 max combo', baseCost: 111, owned: 0, growthRate: 10 },
   ]);
   // store the next affordable item id
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
@@ -502,6 +503,7 @@ export default function AimTrainer() {
 
   // when u hit a target
   const onTargetHit = (targetID, event) => {
+
     // Play the hit sound
     playHitSound();
 
@@ -628,6 +630,8 @@ export default function AimTrainer() {
       const targetPos = targetPositionsRef.current[targetIndex];
       if (doesBotOverlapTarget(botPos, targetPos)) {
         onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y });
+        // ghost target to prevent player from missing the target
+        setGhostTargets(prevTargets => [...prevTargets, { ...targetPos, timestamp: Date.now() }]);
         break;
       }
     }
@@ -665,6 +669,15 @@ export default function AimTrainer() {
   }, [botSpeedMultiplier, isGamePaused]); //dependencies
 
 
+  // Remove ghost targets after a certain time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setGhostTargets(prevTargets => prevTargets.filter(target => now - target.timestamp < 500));
+    }, 50); // Run this every 50ms to check for ghost targets to remove
+
+    return () => clearInterval(interval);
+  }, [ghostTargets]);
 
 
 
@@ -961,7 +974,7 @@ export default function AimTrainer() {
           </div>
           {/* desktop only */}
           <div className="text-[3vh] lg:text-[5vh] leading-none text-center">
-            desktⵙp ⵙnly
+            play ⵙn desktⵙp
           </div>
         </div>
       </div>
@@ -976,14 +989,50 @@ export default function AimTrainer() {
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
         className="backdrop-blur-sm h-screen w-screen absolute overflow-hidden"
         onMouseDown={(e) => {
+          const clickX = e.clientX;
+          const clickY = e.clientY;
+          const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2; // Calculate target radius
+
+          // Check if the click is within any ghost target area
+          const isClickOnGhost = ghostTargets.some(ghost => {
+            const ghostCenterX = ghost.x;
+            const ghostCenterY = ghost.y;
+            // Calculate the bounding box of the ghost target
+            const ghostLeft = ghostCenterX - targetRadius;
+            const ghostRight = ghostCenterX + targetRadius;
+            const ghostTop = ghostCenterY - targetRadius;
+            const ghostBottom = ghostCenterY + targetRadius;
+
+            // Check if the click is within the ghost target's bounds
+            return clickX >= ghostLeft && clickX <= ghostRight &&
+              clickY >= ghostTop && clickY <= ghostBottom;
+          });
+
+          if (!isClickOnGhost) {
+            onTargetMiss(e); // Register as miss only if not clicked on ghost
+          }
           e.preventDefault();
-          onTargetMiss(e);
           e.stopPropagation();
         }}
       >
         <video autoPlay muted loop playsInline className='blur-md opacity-30 w-full h-full object-cover'>
           <source src="bgaimtrainer.mp4" type="video/mp4" />
         </video>
+
+        {/* Ghost target instances */}
+        {ghostTargets.map((ghostTarget, index) => (
+          <div
+            key={index}
+            className="absolute rounded-full"
+            style={{
+              left: `${ghostTarget.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
+              top: `${ghostTarget.y - (baseTargetSize * targetSizeMultiplier / 2)}px`,
+              width: `${baseTargetSize * targetSizeMultiplier}px`,
+              height: `${baseTargetSize * targetSizeMultiplier}px`,
+            }}
+          />
+        ))}
+
         {/* target instances */}
         {targetPositions.map((targetPosition, targetID) => (
           <div
@@ -992,7 +1041,7 @@ export default function AimTrainer() {
               onTargetHit(targetID, e);
               e.stopPropagation();
             }}
-            className="absolute bg-[#e53935] rounded-full border-[3px] border-black"
+            className="absolute shadow-circular bg-opacity-90 bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
               top: `${targetPosition.y - (baseTargetSize * targetSizeMultiplier / 2)}px`,
@@ -1083,9 +1132,8 @@ export default function AimTrainer() {
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
-
               return (
-                <div key={item.id} onMouseUp={() => affordable && purchaseItem(item.id)} className={`shadow-2xl flex flex-col bg-white bg-opacity-50 rounded-xl md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}>
+                <div key={item.id} onMouseUp={() => affordable && purchaseItem(item.id)} className={`shadow-bottomshadow flex flex-col bg-white bg-opacity-50 rounded-xl md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}>
                   {/* Item description */}
                   <div className="flex-2 flex justify-center items-center h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
@@ -1107,7 +1155,7 @@ export default function AimTrainer() {
             {offeredUpgrades.map((upgrade, index) => (
               <div
                 key={upgrade.id}
-                className="bg-white shadow-2xl bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
+                className="bg-white shadow-bottomshadow bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
                 onMouseUp={() => selectLevelUpUpgrade(upgrade)}
               >
                 {upgrade.buff}

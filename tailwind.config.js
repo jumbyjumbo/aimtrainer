@@ -42,6 +42,7 @@ module.exports = {
         'xp': "linear-gradient(90deg, rgba(0,177,255,0.2) 0%, rgba(0,82,255,0.3) 100%)",
       },
       boxShadow: {
+        'circular': `0 0 ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
         'simple': `0 0 ${pixelSize * 6}px rgba(0, 0, 0, ${shadowOpacity})`,
         'simpleinset': `inset 0 0 ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity * 3})`,
         'topshadow': `0px -${pixelSize}px ${pixelSize}px rgba(0, 0, 0, ${shadowOpacity})`,
