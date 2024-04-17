@@ -64,7 +64,7 @@ export default function AimTrainer() {
     setCoin(data.coin);
     setPlayerProgress({ currentXP: data.xp, currentLevel: data.level });
     setVolume(data.volume);
-
+    setIsShopIndicatorOn(data.isShopIndicatorOn);
     // Update the store items with the loaded data
     const updatedStoreItems = storeItems.map(item => {
       const loadedItem = data.storeItems.find(loadedItem => loadedItem.id === item.id);
@@ -136,6 +136,7 @@ export default function AimTrainer() {
 
   // Store open state
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isShopIndicatorOn, setIsShopIndicatorOn] = useState(true);
   // render store?
   const [showStore, setShowStore] = useState(false);
   // shop animation effect
@@ -153,6 +154,8 @@ export default function AimTrainer() {
   }, [isShopOpen]);
   // game state when Leveling up
   const [isLevelingUp, setIsLevelingUp] = useState(false);
+  // is the level up screen interactable?
+  const [isLevelUpInteractable, setIsLevelUpInteractable] = useState(true);
   // menu overlay state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // pause game when menu or Level up overlay is open
@@ -182,24 +185,37 @@ export default function AimTrainer() {
   //  Coin combo multiplier in integer
   const [combo, setCombo] = useState(0);
   // State to track the amount of Coin the player has
-  const [Coin, setCoin] = useState(99999999);
-
+  const [Coin, setCoin] = useState(0);
   //  track ontargethit/miss Coin popups
   const [CoinPopups, setCoinPopups] = useState([]);
 
 
-
-
+  // number of shields 🛡🛡🛡🛡🛡
+  const [maxShield, setMaxShield] = useState(10);
+  const [currentShield, setCurrentShield] = useState(0);
+  const [shieldRegenRate, setShieldRegenRate] = useState(10000);
+  const [shieldRegenMultiplier, setShieldRegenMultiplier] = useState(1);
+  // Shield regeneration logic
+  useEffect(() => {
+    if (maxShield > 0 && currentShield < maxShield) {
+      const intervalId = setInterval(() => {
+        setCurrentShield(prevShield => Math.min(maxShield, prevShield + 1));
+      }, shieldRegenRate / shieldRegenMultiplier);
+      return () => clearInterval(intervalId);
+    }
+  }, [currentShield, maxShield, shieldRegenRate, shieldRegenMultiplier]);
+  // Generate shield icons based on currentShield
+  const shieldsDisplay = Array(currentShield).fill('🛡').join('');
 
   // Store items
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 5 },
-    { id: 2, buff: '-10% miss penalty', baseCost: 0.99, owned: 0, growthRate: 1.09 },
-    { id: 3, buff: '+10% target size', baseCost: 2.22, owned: 0, growthRate: 50 },
-    { id: 4, buff: '+1 base XP', baseCost: 3.33, owned: 0, growthRate: 2 },
-    { id: 5, buff: '+10% XP', baseCost: 10, owned: 0, growthRate: 2 },
-    { id: 6, buff: '+1 max combo', baseCost: 111, owned: 0, growthRate: 10 },
+    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 4 },
+    { id: 2, buff: '-10% miss penalty', baseCost: 0.99, owned: 0, growthRate: 1.07 },
+    { id: 3, buff: '+10% target size', baseCost: 2.22, owned: 0, growthRate: 6 },
+    { id: 4, buff: '+1 base XP', baseCost: 3.33, owned: 0, growthRate: 1.6 },
+    { id: 5, buff: '+10% XP', baseCost: 10, owned: 0, growthRate: 4 },
+    { id: 6, buff: '+1 max combo', baseCost: 42, owned: 0, growthRate: 2 },
   ]);
   // store the next affordable item id
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
@@ -239,7 +255,7 @@ export default function AimTrainer() {
   // combo increase multiplier
   const [comboIncreaseMultiplier, setComboIncreaseMultiplier] = useState(1.1);
   // max Coin combo limit
-  const [maxComboLimit, setMaxComboLimit] = useState(5);
+  const [maxComboLimit, setMaxComboLimit] = useState(7);
   // target hit interval speed reward multiplier
   const [intervalSpeedRewardMultiplier, setIntervalSpeedRewardMultiplier] = useState(1);
   // item cost reduction rate
@@ -275,8 +291,12 @@ export default function AimTrainer() {
       if (newCurrentXP >= XPNeeded) {
         newCurrentXP -= XPNeeded;
         currentLevel++;
-        setIsLevelingUp(true);
-
+        setIsLevelUpInteractable(false); // make sure we cant interact with the level up overlay
+        setIsLevelingUp(true); // Show the level-up overlay
+        // Disable interaction for Xms to prevent accidental clicks
+        setTimeout(() => {
+          setIsLevelUpInteractable(true);
+        }, 800);
         // Get 3 random upgrades to offer
         const upgradesToOffer = getRandomUpgrades();
         // Assuming you have a state to store these 3 upgrades
@@ -292,7 +312,7 @@ export default function AimTrainer() {
   const [levelUpUpgrades, setLevelUpUpgrades] = useState([
     { id: 0, buff: "+1 base ₿", owned: 0 },
     { id: 1, buff: "+1 ⵙ", owned: 0 },
-    { id: 2, buff: "+5% ⵙ speed", owned: 0 },
+    { id: 2, buff: "+10% ⵙ speed", owned: 0 },
     { id: 3, buff: "+10% ₿", owned: 0 },
     { id: 4, buff: "+10% speed reward", owned: 0 },
   ]);
@@ -306,8 +326,8 @@ export default function AimTrainer() {
       case "+1 ⵙ":
         addBot();
         break;
-      case "+5% ⵙ speed":
-        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.05);
+      case "+10% ⵙ speed":
+        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
       case "+10% ₿":
         setCoinGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
@@ -335,6 +355,10 @@ export default function AimTrainer() {
 
   // on click effect for level up upgrade
   const selectLevelUpUpgrade = (selectedUpgrade) => {
+    //if levelup overlay shouldnt be interactable yet, do nothing
+    if (!isLevelUpInteractable) {
+      return;
+    }
     // Increment 'owned' for the selected upgrade
     setLevelUpUpgrades(upgrades =>
       upgrades.map(upgrade =>
@@ -402,8 +426,6 @@ export default function AimTrainer() {
 
 
 
-
-
   // Coin combo multiplier decrease (variable rate)
   useEffect(() => {
     let intervalId;
@@ -424,7 +446,6 @@ export default function AimTrainer() {
       }
     };
   }, [comboDecreaseRate, maxComboLimit, isGamePaused]); //dependencies
-
 
 
 
@@ -603,7 +624,7 @@ export default function AimTrainer() {
 
 
 
-
+  const [moveDelayPerBot, setMoveDelayPerBot] = useState(500); // base delay between each bot's move
   // Function to add a new bot
   const addBot = () => {
     setBotPositions(prevBotPositions => [...prevBotPositions, generatePosition()]);
@@ -654,16 +675,17 @@ export default function AimTrainer() {
     botPositions.forEach((_, index) => {
       setTimeout(() => {
         moveBotAndCheckHit(index);
-      }, index * 100); // Delay between each bot move
+      }, index * moveDelayPerBot / botSpeedMultiplier); // Delay between each bot move
     });
   };
   // Move bots sequentially at interval
   useEffect(() => {
     if (!isGamePaused) {
+      // calculate total time for 1 full sequence 
+      const totalSequenceTime = botPositions.length * moveDelayPerBot / botSpeedMultiplier;
       const intervalId = setInterval(() => {
         moveBotsSequentially();
-      }, 5000 / botSpeedMultiplier); // interval in ms
-
+      }, totalSequenceTime + moveDelayPerBot / botSpeedMultiplier); // delay between each sequence
       return () => clearInterval(intervalId);
     }
   }, [botSpeedMultiplier, isGamePaused]); //dependencies
@@ -683,19 +705,9 @@ export default function AimTrainer() {
 
 
 
-  // on load utilities (prevent scroll on mobile, generate targets, remove loading screen)
+  // Generate initial target positions
   useEffect(() => {
-    // Prevent default touch behavior globally
-    const preventDefaultTouch = (e) => e.preventDefault();
-    document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
-
-    // Generate initial target positions
     setTargetPositions(targetPositions.map(() => generateTargetPosition()));
-
-    // cleanup / remove event listeners
-    return () => {
-      document.removeEventListener('touchmove', preventDefaultTouch);
-    };
   }, []);
 
 
@@ -817,10 +829,6 @@ export default function AimTrainer() {
   }, [lastTargetHitTimestamp]); // Dependencies array
 
 
-
-
-
-
   // data refs for game data autosave
   const scoreRef = useRef(Score);
   const coinRef = useRef(Coin);
@@ -829,6 +837,7 @@ export default function AimTrainer() {
   const storeItemsRef = useRef(storeItems);
   const levelUpUpgradesRef = useRef(levelUpUpgrades);
   const volumeRef = useRef(volume);
+  const isShopIndicatorOnRef = useRef(isShopIndicatorOn);
   // Update the ref when the state changes
   useEffect(() => {
     scoreRef.current = Score;
@@ -838,8 +847,9 @@ export default function AimTrainer() {
     storeItemsRef.current = storeItems;
     levelUpUpgradesRef.current = levelUpUpgrades;
     volumeRef.current = volume;
+    isShopIndicatorOnRef.current = isShopIndicatorOn;
 
-  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume]);
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn]);
   //local storage auto save in real time
   useEffect(() => {
     if (!isLoading) {
@@ -851,12 +861,12 @@ export default function AimTrainer() {
         storeItems: storeItemsRef.current.map(item => ({ id: item.id, owned: item.owned })),
         levelUpUpgrades: levelUpUpgradesRef.current.map(upgrade => ({ id: upgrade.id, owned: upgrade.owned })),
         volume: volumeRef.current,
+        isShopIndicatorOn: isShopIndicatorOnRef.current,
       };
       // Update Local Storage in real-time
       localStorage.setItem('gameData', JSON.stringify(gameData));
     }
-
-  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume]);
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn]);
   // Function to save game data to Firestore
   const autosaveGame = async (gameData) => {
     if (auth.currentUser) {
@@ -890,45 +900,9 @@ export default function AimTrainer() {
       }
     };
 
-    const autosaveInterval = setInterval(autosaveAction, 60000); // 1-minute interval
+    const autosaveInterval = setInterval(autosaveAction, 1000 * 60 * 10); // 10 minute interval
     return () => clearInterval(autosaveInterval);
   }, []);
-
-
-
-  // Determine the swipe direction based on the swipe direction
-  const handleSwipeGesture = (deltaX, deltaY) => {
-    const direction = Math.abs(deltaX) > Math.abs(deltaY) ? (deltaX > 0 ? 'right' : 'left') : (deltaY > 0 ? 'down' : 'up');
-    //swipe actions by direction
-    switch (direction) {
-      case 'up':
-        setIsShopOpen(true);
-        break;
-      case 'down':
-        setIsShopOpen(false);
-        break;
-      default:
-        break;
-    }
-  }
-  // Touch swipe gesture detection
-  const [touchStartPosition, setTouchStartPosition] = useState({ x: 0, y: 0 });
-  // Handle the start of a touch
-  const handleTouchStart = (event) => {
-    const touch = event.touches[0];
-    setTouchStartPosition({ x: touch.clientX, y: touch.clientY });
-  };
-  // Handle the end of a touch
-  const handleTouchEnd = (event) => {
-    const touch = event.changedTouches[0];
-    const deltaX = touch.clientX - touchStartPosition.x;
-    const deltaY = touch.clientY - touchStartPosition.y;
-
-    // Check if the swipe is significant
-    if (Math.abs(deltaX) > 50 || Math.abs(deltaY) > 50) {
-      handleSwipeGesture(deltaX, deltaY);
-    }
-  };
 
 
 
@@ -959,7 +933,6 @@ export default function AimTrainer() {
       </div>
     );
   }
-
   // Mobile warning screen
   if (isMobile) {
     return (
@@ -980,10 +953,9 @@ export default function AimTrainer() {
       </div>
     );
   }
-
   // Main game
   return (
-    <main className="h-screen w-screen bg-cover bg-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} >
+    <main className="h-screen w-screen bg-cover bg-center">
       {/* target spawn canvas */}
       <div
         style={{ cursor: "url('/greendot.png') 32 32, auto" }}
@@ -1015,9 +987,6 @@ export default function AimTrainer() {
           e.stopPropagation();
         }}
       >
-        <video autoPlay muted loop playsInline className='blur-md opacity-30 w-full h-full object-cover'>
-          <source src="bgaimtrainer.mp4" type="video/mp4" />
-        </video>
 
         {/* Ghost target instances */}
         {ghostTargets.map((ghostTarget, index) => (
@@ -1041,7 +1010,7 @@ export default function AimTrainer() {
               onTargetHit(targetID, e);
               e.stopPropagation();
             }}
-            className="absolute shadow-circular bg-opacity-90 bg-[#e53935] rounded-full border-[3px] border-black"
+            className="absolute  bg-opacity-90 bg-[#e53935] rounded-full border-[3px] border-black"
             style={{
               left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
               top: `${targetPosition.y - (baseTargetSize * targetSizeMultiplier / 2)}px`,
@@ -1070,26 +1039,37 @@ export default function AimTrainer() {
       {/* HUD */}
       <div className="pointer-events-none">
         {/* Coin combo multiplier progress bar */}
-        <div className="shadow-bottomshadow backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full md:h-[5vh] h-[6vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.4)')}` }}>
+        <div className=" backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.4)')}` }}>
           {/* Combo bar filler */}
           <div className={`h-full border-black ${combo == 0 ? '' : 'border-r-[3px]'} `} style={{ width: `${(combo / maxComboLimit) * 100}%`, backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.5)')}` }}></div>
-          {/* Display current Coin combo multiplier */}
-          {/* Display current Coin combo multiplier */}
-          <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
-            <span className="text-[3vh]">combo <span style={{ textTransform: 'lowercase' }}>x</span>{combo > 1 ? formatAmount(combo) : '1'}</span>
+          {/* Label "Combo" on the left */}
+          <div className="absolute left-0 h-full px-4 flex items-center">
+            <span className="text-[3vh]">combo</span>
+          </div>
+
+          {/* Display current Coin combo multiplier in the center */}
+          <div className="lowercase absolute left-0 right-0 h-full flex items-center justify-center">
+            <span className="text-[3vh]">x{combo > 1 ? formatAmount(combo) : '1'}</span>
           </div>
 
         </div>
 
-        {/* Target hit and coin counter */}
-        <div className="md:text-[7vh] px-[2vw] absolute top-[6vh] md:top-[5vh] w-full flex flex-row justify-between items-center">
+        {/* Target hit and coin and shield counter in corners */}
+        <div className="text-6xl md:text-8xl px-4 pt-2 md:px-8 md:pt-4 absolute top-[5vh] w-full flex flex-row justify-center items-center">
+          {Score > 0 ? <div>{Score}</div> : <div className="flex-grow"></div>}
+        </div>
+        <div className="text-4xl md:text-6xl px-4 pt-2 md:px-8 md:pt-4 absolute top-[5vh] w-full flex flex-row justify-between items-center">
           {Coin > 0 ? <div>{formatAmount(Coin)} ₿</div> : <div className="flex-grow"></div>}
-          {Score > 0 && <div>{Score}</div>}
+          {currentShield > 0 ?
+            <div className='flex flex-row justify-center items-center gap-1 md:gap-3 ' >
+              {currentShield}
+              <img src="shield.png" className='h-8 md:h-14' alt="Shield" />
+            </div> : <div className="flex-grow"></div>}
         </div>
 
         { /* can shop indicator */}
-        {canAfford && (
-          <div className="text-[3vh] w-full absolute bottom-[7vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+        {canAfford && isShopIndicatorOn && (
+          <div className="animate-flash text-[3vh] w-full absolute bottom-[7vh] left-1/2 transform -translate-x-1/2 flex items-center justify-center">
             <img src="/spacebar.png" alt="Open Shop" style={{ width: '12vh', height: '3vh' }} />
             <div className="w-[0.5vw]"></div>
             <div>to shop</div>
@@ -1097,7 +1077,7 @@ export default function AimTrainer() {
         )}
 
         {/* XP Progress Bar */}
-        <div className="shadow-topshadow backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[6vh] md:h-[5vh] bg-xp bg-opacity-65 flex items-center">
+        <div className=" backdrop-blur-sm border-t-[3px] border-black absolute bottom-0 left-0 w-full h-[5vh] bg-xp bg-opacity-65 flex items-center">
           <div className={`h-full border-black bg-xp bg-opacity-50 ${playerProgress.currentXP == 0 ? '' : 'border-r-[3px]'}`} style={{ width: `${playerProgress.currentXP / ((XPNeededToLevelUp(playerProgress.currentLevel))) * 100}%` }}></div>
           {/* Display Level on the far left */}
           <div className="absolute left-0 h-full flex items-center px-4">
@@ -1113,7 +1093,7 @@ export default function AimTrainer() {
         {CoinPopups.map((popup) => (
           <div
             key={popup.id}
-            className={`fixed transition-opacity ${popup.type === 'gain' ? 'animate-fadeOutGain text-[#F89414]' : 'animate-fadeOutLoss text-red-500'}`}
+            className={`fixed transition-opacity ${popup.type === 'gain' ? 'animate-fadeOutGain text-[#F89414]' : 'animate-fadeOutLoss text-[#e53935]'}`}
             style={{
               left: `${popup.x - 80}px`,
               top: `${popup.y - 40}px`,
@@ -1126,14 +1106,14 @@ export default function AimTrainer() {
 
       {/* Coin store */}
       {showStore && (
-        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} shadow-topshadow absolute w-screen h-screen top-0 md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
+        <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-screen top-0 md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
           <div className="overflow-hidden p-[2vh] md:pt-[4vh] gap-[2vh] grid grid-cols-2 grid-rows-5 lg:grid-cols-5 lg:grid-rows-3">
             {storeItems.map((item, index) => {
               // Determine if the current item can be afforded
               const affordable = Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned);
               return (
-                <div key={item.id} onMouseUp={() => affordable && purchaseItem(item.id)} className={`shadow-bottomshadow flex flex-col bg-white bg-opacity-50 rounded-xl md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}>
+                <div key={item.id} onMouseUp={() => affordable && purchaseItem(item.id)} className={` flex flex-col bg-white bg-opacity-50 rounded-xl md:rounded-3xl px-[2vw] py-[1vh] border-[3px] border-black justify-center items-center text-center ${!affordable && item.owned === 0 ? item.id === nextAffordableItemId ? "opacity-50" : "opacity-0" : affordable ? "" : "opacity-50"}`}>
                   {/* Item description */}
                   <div className="flex-2 flex justify-center items-center h-full text-[2.5vh] lg:text-[3vh] text-center">{item.buff}</div>
                   {/* Item cost */}
@@ -1155,7 +1135,7 @@ export default function AimTrainer() {
             {offeredUpgrades.map((upgrade, index) => (
               <div
                 key={upgrade.id}
-                className="bg-white shadow-bottomshadow bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl"
+                className={`bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl ${!isLevelUpInteractable ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onMouseUp={() => selectLevelUpUpgrade(upgrade)}
               >
                 {upgrade.buff}
@@ -1167,21 +1147,34 @@ export default function AimTrainer() {
 
       {/* menu overlay */}
       {isMenuOpen && (
-        <div className=" absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
-          <div className='text-[10vh] h-[20vh] flex justify-center items-center' >aimtrainer</div>
-          {/* sound control */}
-          <div className='h-[80vh] flex flex-row justify-center items-center' >
-            <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
-            <div className='w-[2vw]'></div>
-            <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
-              id="volume-control"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => setVolume(e.target.value)}
-            />
+        <div className="absolute backdrop-blur-2xl w-screen h-screen">
+          <div className='pt-8 absolute w-full text-9xl flex justify-center items-center' >aimtrainer</div>
+          <div className='w-full h-full flex flex-col justify-center gap-12 items-center'>
+            {/* sound control */}
+            <div className='flex flex-row justify-center items-center' >
+              <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
+              <div className='w-[2vw]'></div>
+              <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
+                id="volume-control"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={(e) => setVolume(e.target.value)}
+              />
+            </div>
+            {/* Toggle for shop indicator */}
+            <div className="flex items-center">
+              <label htmlFor="shop-indicator-toggle" className=" mr-2 text-[3vh]">show shop indicator:</label>
+              <input
+                className="accent-black w-6 h-6"
+                id="shop-indicator-toggle"
+                type="checkbox"
+                checked={isShopIndicatorOn}
+                onChange={(e) => setIsShopIndicatorOn(e.target.checked)}
+              />
+            </div>
           </div>
         </div>
       )}
