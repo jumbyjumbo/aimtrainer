@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from "firebase/app";
 //db
-import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, getDocs, updateDoc, query, collection, where, limit, orderBy, onSnapshot } from 'firebase/firestore';
 //auth
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 
@@ -65,6 +65,7 @@ export default function AimTrainer() {
     setPlayerProgress({ currentXP: data.xp, currentLevel: data.level });
     setVolume(data.volume);
     setIsShopIndicatorOn(data.isShopIndicatorOn);
+    setPlayerName(data.playerName || "ANONYMOUS");
     // Update the store items with the loaded data
     const updatedStoreItems = storeItems.map(item => {
       const loadedItem = data.storeItems.find(loadedItem => loadedItem.id === item.id);
@@ -116,12 +117,54 @@ export default function AimTrainer() {
       } else {
         console.log('No user is signed in, signing in anonymously');
         signInAnonymously(auth)
-          .then(() => console.log('Signed in anonymously'))
           .catch(error => console.error('Error signing in anonymously:', error.message));
       }
     });
     return () => unsubscribe(); // Clean up the subscription
   }, []);
+
+
+  //player name state
+  const [playerName, setPlayerName] = useState('ANONYMOUS');
+  // State for the name input prompt
+  const [nameInput, setNameInput] = useState("");
+  // Function to handle name input
+  const handleNameInput = (e) => {
+    setNameInput(e.target.value);
+  };
+
+  // Function to handle name submission
+  const handleNameSubmit = async () => {
+    if (nameInput.trim() !== "" && nameInput.trim().toUpperCase() !== "ANONYMOUS") {
+      const upperCaseName = nameInput.trim().toUpperCase();
+      // Check if the name is valid (only uppercase letters, numbers, "." and "_")
+      const isValidName = /^[A-Z0-9._]+$/.test(upperCaseName);
+      if (!isValidName) {
+        alert("Please enter a valid name. Only letters, numbers, '.' and '_' are allowed.");
+        return;
+      }
+      // Check if the name is unique
+      const nameExists = await checkNameExists(upperCaseName);
+      if (!nameExists) {
+        setPlayerName(upperCaseName);
+        // Save to local storage and Firestore
+        const gameData = JSON.parse(localStorage.getItem('gameData')) || {};
+        gameData.playerName = upperCaseName;
+        localStorage.setItem('gameData', JSON.stringify(gameData));
+        await autosaveGame(gameData);
+      } else {
+        alert("This name is already taken. Please choose another name.");
+      }
+    } else {
+      alert("Please enter a valid name.");
+    }
+  };
+  // Function to check if a name exists in Firestore
+  const checkNameExists = async (playerName) => {
+    const q = query(collection(db, 'players'), where('name', '==', playerName));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  };
 
 
   // Sound volume state
@@ -131,13 +174,11 @@ export default function AimTrainer() {
   // game paused state
   const [isGamePaused, setIsGamePaused] = useState(false);
 
-  // leaderboard open state
-  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   // Store open state
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isShopIndicatorOn, setIsShopIndicatorOn] = useState(true);
-  // render store?
+  // render store
   const [showStore, setShowStore] = useState(false);
   // shop animation effect
   useEffect(() => {
@@ -152,6 +193,65 @@ export default function AimTrainer() {
 
     return () => clearTimeout(timeoutId);
   }, [isShopOpen]);
+
+
+  // leaderboard open state
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  //render leaderboard
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  // leaderboard loading state
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
+  // leaderboard data state
+  const [leaderboardData, setLeaderboardData] = useState([]);
+
+  // get the data for the leaderboard get current player data from local storage and other players data from firestore
+  const fetchLeaderboardData = () => {
+    // get top 100 player data from firestore
+    const q = query(collection(db, 'players'), orderBy('score', 'desc'), limit(100));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Fetch current player's data from Local Storage
+      const localGameDataString = localStorage.getItem('gameData');
+      const localGameData = localGameDataString ? JSON.parse(localGameDataString) : null;
+      // Filter out the current player's data from Firestore data
+      firestoreData = firestoreData.filter(player => player.id !== auth.currentUser.uid);
+      // Add current player's data if available
+      if (localGameData) {
+        firestoreData.push({ id: auth.currentUser.uid, ...localGameData });
+      }
+      // Sort the leaderboard data by score
+      firestoreData.sort((a, b) => b.score - a.score);
+      // Update the state with the combined leaderboard data
+      setLeaderboardData(firestoreData);
+    });
+    return unsubscribe;
+  };
+
+  // Leaderboard animation effect + leaderboard data fetch
+  useEffect(() => {
+    let timeoutId;
+    let unsubscribe = null;
+
+    if (isLeaderboardOpen) {
+      setShowLeaderboard(true); // Immediately show the leaderboard for the slide-in animation
+      unsubscribe = fetchLeaderboardData(); // Fetch leaderboard data when the leaderboard is opened
+    } else {
+      // Start the slide-out animation but keep the leaderboard visible for its duration
+      timeoutId = setTimeout(() => setShowLeaderboard(false), 150); // Match the animation duration
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        unsubscribe(); // Clean up the Firestore listener when the leaderboard is closed
+      }
+    };
+  }, [isLeaderboardOpen]);
+
+
+
+
+
   // game state when Leveling up
   const [isLevelingUp, setIsLevelingUp] = useState(false);
   // is the level up screen interactable?
@@ -160,7 +260,7 @@ export default function AimTrainer() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // pause game when menu or Level up overlay is open
   useEffect(() => {
-    setIsGamePaused(isMenuOpen || isLevelingUp);
+    setIsGamePaused(isMenuOpen || isLevelingUp || isLeaderboardOpen);
   }, [isMenuOpen, isLevelingUp]);
 
 
@@ -187,11 +287,13 @@ export default function AimTrainer() {
   // State to track the amount of Coin the player has
   const [Coin, setCoin] = useState(0);
   //  track ontargethit/miss Coin popups
-  const [CoinPopups, setCoinPopups] = useState([]);
+  const [hitPopups, setHitPopups] = useState([]);
+
+
 
 
   // number of shields 🛡🛡🛡🛡🛡
-  const [maxShield, setMaxShield] = useState(10);
+  const [maxShield, setMaxShield] = useState(1);
   const [currentShield, setCurrentShield] = useState(0);
   const [shieldRegenRate, setShieldRegenRate] = useState(10000);
   const [shieldRegenMultiplier, setShieldRegenMultiplier] = useState(1);
@@ -204,16 +306,14 @@ export default function AimTrainer() {
       return () => clearInterval(intervalId);
     }
   }, [currentShield, maxShield, shieldRegenRate, shieldRegenMultiplier]);
-  // Generate shield icons based on currentShield
-  const shieldsDisplay = Array(currentShield).fill('🛡').join('');
 
   // Store items
   const [storeItems, setStoreItems] = useState([
     { id: 0, buff: '+1 target', baseCost: 0.42, owned: 0, growthRate: 2 },
-    { id: 1, buff: '-10% combo decrease', baseCost: 0.69, owned: 0, growthRate: 4 },
+    { id: 1, buff: '+5% combo sustain', baseCost: 0.69, owned: 0, growthRate: 4 },
     { id: 2, buff: '-10% miss penalty', baseCost: 0.99, owned: 0, growthRate: 1.07 },
-    { id: 3, buff: '+10% target size', baseCost: 2.22, owned: 0, growthRate: 6 },
-    { id: 4, buff: '+1 base XP', baseCost: 3.33, owned: 0, growthRate: 1.6 },
+    { id: 3, buff: '+5% target size', baseCost: 2.22, owned: 0, growthRate: 10 },
+    { id: 4, buff: '+10% shield regen', baseCost: 5, owned: 0, growthRate: 3 },
     { id: 5, buff: '+10% XP', baseCost: 10, owned: 0, growthRate: 4 },
     { id: 6, buff: '+1 max combo', baseCost: 42, owned: 0, growthRate: 2 },
   ]);
@@ -249,7 +349,7 @@ export default function AimTrainer() {
   const [comboDecreaseRate, setComboDecreaseRate] = useState(0.0035);
   // Target size in % of base size
   const [targetSizeMultiplier, setTargetSizeMultiplier] = useState(1);
-  const baseTargetSize = 85; // Base size in px
+  const baseTargetSize = 100; // Base size in px
   // State to track the base Coin reward
   const [baseCoinReward, setBaseCoinReward] = useState(1);
   // combo increase multiplier
@@ -263,7 +363,7 @@ export default function AimTrainer() {
   //  bot speed multiplier
   const [botSpeedMultiplier, setBotSpeedMultiplier] = useState(1);
   // Multipliers for coin and XP gains
-  const [coinGainMultiplier, setCoinGainMultiplier] = useState(1.0);
+  const [coinShopMultiplier, setCoinShopMultiplier] = useState(1.0);
   const [xpGainMultiplier, setXpGainMultiplier] = useState(1.0);
 
 
@@ -279,7 +379,7 @@ export default function AimTrainer() {
   const XPNeededToLevelUp = (Level) => {
     const baseXP = 50; // Base XP needed for the first level
     // Polynomial growth
-    return Math.floor(baseXP + (100 * Math.pow(Level - 1, 1.5)));
+    return Math.floor(baseXP + (100 * Math.pow(Level - 1, 1 + Level * 0.02)));
   };
   // handle XP gain and Level up on target hit
   const addXPAndCheckLevelUp = (XPGained) => {
@@ -310,13 +410,11 @@ export default function AimTrainer() {
 
   // Level-Up Upgrades
   const [levelUpUpgrades, setLevelUpUpgrades] = useState([
-    { id: 0, buff: "+1 base ₿", owned: 0 },
     { id: 1, buff: "+1 ⵙ", owned: 0 },
-    { id: 2, buff: "+10% ⵙ speed", owned: 0 },
     { id: 3, buff: "+10% ₿", owned: 0 },
     { id: 4, buff: "+10% speed reward", owned: 0 },
+    { id: 5, buff: "+1 shield", owned: 0 },
   ]);
-
   // Function to apply the effects of a level-up upgrade
   const applyLevelUpUpgrades = (buff) => {
     switch (buff) {
@@ -330,16 +428,19 @@ export default function AimTrainer() {
         setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
       case "+10% ₿":
-        setCoinGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
+        setCoinShopMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
       case "+10% speed reward":
         setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.1);
+        break;
+      case "+1 shield":
+        setMaxShield(prevShield => prevShield + 1);
+        setCurrentShield(prevCurrentShield => prevCurrentShield + 1);
         break;
       default:
         console.log("Invalid upgrade description:", buff);
     }
   };
-
   // get 3 random levelUpUpgrades
   const getRandomUpgrades = () => {
     // Shuffle the array using the Fisher-Yates algorithm
@@ -351,8 +452,6 @@ export default function AimTrainer() {
     // Return the first 3 items of the shuffled array
     return levelUpUpgrades.slice(0, 3);
   };
-
-
   // on click effect for level up upgrade
   const selectLevelUpUpgrade = (selectedUpgrade) => {
     //if levelup overlay shouldnt be interactable yet, do nothing
@@ -377,14 +476,38 @@ export default function AimTrainer() {
 
 
 
-  // Format any amount to 2 decimal places if fractional and significant
+  // Format to 3 digits max and add suffix if needed
   const formatAmount = (amount) => {
-    if (amount % 1 === 0 || parseFloat(amount.toFixed(2)) % 1 === 0) {
-      return `${Math.floor(amount)}`;
-    } else {
-      return amount.toFixed(2);
+    const suffixes = ['', 'K', 'M', 'B', 'T'];
+    let suffixIndex = 0;
+
+    // Divide by 1000 and add suffix until the amount is less than 1000
+    while (amount >= 1000 && suffixIndex < suffixes.length - 1) {
+      amount /= 1000;
+      suffixIndex++;
     }
+
+    // Format amount based on its value
+    let roundedAmount;
+    if (amount >= 100) {
+      roundedAmount = Math.round(amount); // No decimal places
+    } else if (amount >= 10) {
+      roundedAmount = Math.floor(amount * 10) / 10; // 1 decimal place
+    } else {
+      roundedAmount = Math.floor(amount * 100) / 100; // 2 decimal places
+    }
+
+    // Handle trailing zeros
+    let formattedAmount = roundedAmount.toString();
+    if (formattedAmount.indexOf('.') !== -1) {
+      formattedAmount = formattedAmount.replace(/\.?0+$/, '');
+    }
+
+    // Return the formatted amount with the suffix
+    return `${formattedAmount}${suffixes[suffixIndex]}`;
   };
+
+
 
 
   // Function to add a new target
@@ -396,8 +519,6 @@ export default function AimTrainer() {
       setTargetPositions(targetPositions.slice(0, -1));
     }
   };
-
-
 
   // Function to generate a random position on the screen
   const generatePosition = () => {
@@ -424,12 +545,40 @@ export default function AimTrainer() {
     );
   };
 
+  // target component
+  const target = (targetPosition, targetID) => {
+    const targetSize = baseTargetSize * targetSizeMultiplier;
+    return (
+      <div
+        key={targetID}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          onTargetHit(targetID, e);
+          e.stopPropagation();
+        }}
+        className="absolute flex justify-center items-center rounded-full bg-[#3b82f6] border-[3px] border-black opacity-90"
+        style={{
+          left: `${targetPosition.x - targetSize / 2}px`,
+          top: `${targetPosition.y - targetSize / 2}px`,
+          width: `${targetSize}px`,
+          height: `${targetSize}px`,
+        }}
+      >
+        {/* target middle x3 */}
+        <div className="absolute rounded-full bg-[#F89414] border-[3px] border-black" style={{ width: `${targetSize * 0.6}px`, height: `${targetSize * 0.6}px` }}></div>
+        {/* target center x10 */}
+        <div className="absolute rounded-full bg-[#e53935] border-[3px] border-black" style={{ width: `${targetSize * 0.25}px`, height: `${targetSize * 0.25}px` }}></div>
+      </div>
+    );
+  };
+
+
+
 
 
   // Coin combo multiplier decrease (variable rate)
   useEffect(() => {
     let intervalId;
-
     if (!isGamePaused) {
       intervalId = setInterval(() => {
         setCombo(prevCombo => {
@@ -449,32 +598,6 @@ export default function AimTrainer() {
 
 
 
-  // Base Coin reward bonus function based on time elapsed since last target hit
-  const calculateIntervalSpeedCoinBonus = (timeDifference) => {
-    // Cap the minimum time difference at 50ms
-    const effectiveTimeDifference = Math.max(timeDifference, 50);
-    // Calculate potential reward based on the formula and multiply by baseCoinReward
-    const potentialReward = baseCoinReward * (1.35 ** ((1000 - effectiveTimeDifference) * 0.01 * intervalSpeedRewardMultiplier));
-    // Return 1 as the minimum potential reward or the calculated potential reward
-    return potentialReward < 1 || timeDifference === 0 ? baseCoinReward : potentialReward;
-  };
-  // Coin reward per target hit
-  const targetHitCoinReward = () => {
-    const currentTime = Date.now();
-    const timeDifference = lastTargetHitTimestamp > 0 ? currentTime - lastTargetHitTimestamp : 0;
-    setLastTargetHitTimestamp(currentTime);
-    // base Coin reward based on last target hit interval
-    const speedCoinBonus = calculateIntervalSpeedCoinBonus(timeDifference);
-    // bonus Coin combo multiplier based on progress bar
-    const comboCoinBonus = 0.01 * (speedCoinBonus * Math.max(1, combo));
-
-    // Apply the "+10% Coins" bonus
-    const finalCoinEarned = comboCoinBonus * coinGainMultiplier;
-
-    // Update Coin state with the final amount earned
-    setCoin((prevCoin) => prevCoin + finalCoinEarned);
-    return finalCoinEarned;
-  };
 
 
   // Sound effect for target hit
@@ -490,77 +613,159 @@ export default function AimTrainer() {
     if (hitSoundRef.current) {
       const hitSound = hitSoundRef.current.cloneNode(); // Clone the audio for concurrent playback
       hitSound.volume = volume; // Set volume to the current state value
-      hitSound.play().catch(error => console.error('Error playing the sound:', error));
+      hitSound.play();
     }
   };
 
-
   // trigger the popup on target hit/miss
-  const showPopup = (x, y, amount, type) => {
+  const showPopup = (x, y, type, amount = null, hitArea = null) => {
     // Calculate adjustment towards center for the popup
     const adjustmentX = x < window.innerWidth / 2 ? 100 : -100;
     const adjustmentY = y < window.innerHeight / 2 ? 50 : -50;
+
+    // Determine the display text based on the type
+    let displayText;
+    switch (type) {
+      case 'block':
+        displayText = 'block';
+        break;
+      case 'loss':
+        displayText = `-${formatAmount(amount)}%`;
+        break;
+      case 'gain':
+        displayText = `+${formatAmount(amount)}`;
+        break;
+      default:
+        displayText = '';
+    }
+
+    // Determine the color based on hit area
+    let popupColor = '#000'; // Default to black
+    if (hitArea === 'center') {
+      popupColor = '#e53935'; // Red for center
+    } else if (hitArea === 'middle') {
+      popupColor = '#F89414'; // Yellow for middle
+    } else if (hitArea === 'outer') {
+      popupColor = '#3b82f6'; // Blue for outer
+    }
 
     // Create the popup object
     const newPopup = {
       id: Date.now(), // Unique ID for the popup
       x: x + adjustmentX,
       y: y + adjustmentY,
-      amount: type === 'loss' ? `-${formatAmount(amount)}%` : formatAmount(amount),
+      displayText: displayText,
       type: type,
+      color: popupColor,
     };
 
     // Add the popup to the state
-    setCoinPopups((prevPopups) => [...prevPopups, newPopup]);
+    setHitPopups((prevPopups) => [...prevPopups, newPopup]);
 
     // Set the removal delay based on the popup type
-    const removalDelay = type === 'loss' ? 1000 : 500;
+    const removalDelay = type === 'loss' || 'block' ? 1200 : 500;
     // Schedule the popup removal after 500ms
     setTimeout(() => {
-      setCoinPopups((prevPopups) => prevPopups.filter(popup => popup.id !== newPopup.id));
+      setHitPopups((prevPopups) => prevPopups.filter(popup => popup.id !== newPopup.id));
     }, removalDelay);
   };
 
 
-  // when u hit a target
-  const onTargetHit = (targetID, event) => {
+  // Base Coin reward bonus function based on time elapsed since last target hit
+  const calculateIntervalSpeedCoinBonus = (timeDifference) => {
+    // Cap the minimum time difference at 50ms
+    const effectiveTimeDifference = Math.max(timeDifference, 50);
+    // Define the maximum reward multiplier
+    const maxMultiplier = 5; //effective is a lil over x4 bc of 50ms cap
+    // Define the decay factor to control how quickly the reward decreases with time
+    const decayFactor = 0.004;
 
-    // Play the hit sound
-    playHitSound();
-
-    // Remove the target and add a new one
-    regenerateTargetPosition(targetID);
-    // Increase the target hit counter
-    setScore(prevCount => prevCount + 1);
-    const finalCoinEarned = targetHitCoinReward();
-
-    // Increase combo multiplier by 10% max combo * comboIncreaseMultiplier on target hit
-    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.1 * maxComboLimit * (comboIncreaseMultiplier)));
-
-    // Multiply XP gain by the combo multiplier 
-    const XPGained = baseXPGainPerHit * Math.max(1, combo) * xpGainMultiplier; // Ensure the multiplier is at least 1
-    // Add the XP and check for Level up
-    addXPAndCheckLevelUp(XPGained);
-
-    // Show the Coin gain popup
-    showPopup(event.clientX, event.clientY, finalCoinEarned, 'gain');
+    // Calculate the reward multiplier using an exponential decay formula
+    const rewardMultiplier = maxMultiplier * Math.exp(-decayFactor * effectiveTimeDifference);
+    // Calculate the potential reward
+    const potentialReward = baseCoinReward * rewardMultiplier;
+    // Return the baseCoinReward as the minimum reward or the calculated potential reward
+    return Math.max(potentialReward, baseCoinReward);
   };
 
+  // Coin reward per target hit
+  const targetHitCoinReward = () => {
+    const currentTime = Date.now();
+    const timeDifference = lastTargetHitTimestamp > 0 ? currentTime - lastTargetHitTimestamp : 0;
+    setLastTargetHitTimestamp(currentTime);
+    // base Coin reward based on last target hit interval
+    const speedCoinBonus = calculateIntervalSpeedCoinBonus(timeDifference);
+    // base coin reward * speed * combo * shop multiplier
+    return 0.01 * speedCoinBonus * Math.max(1, combo) * coinShopMultiplier;
+  };
+
+  // when u hit a target
+  const onTargetHit = (targetID, event) => {
+    // Play the hit sound
+    playHitSound();
+    // Increase the target hit counter
+    setScore(prevCount => prevCount + 1);
+    // Get the target's center position before removing it
+    const targetCenterX = targetPositions[targetID].x;
+    const targetCenterY = targetPositions[targetID].y;
+    // Remove the target and add a new one
+    regenerateTargetPosition(targetID);
+    // Get the click position (or bot hit position)
+    const clickX = event.clientX;
+    const clickY = event.clientY;
+    // Calculate the distance between the click and the target's center
+    const distance = Math.sqrt((clickX - targetCenterX) ** 2 + (clickY - targetCenterY) ** 2);
+    // Calculate the target size based on the multiplier
+    const targetSize = baseTargetSize * targetSizeMultiplier;
+    const middleRadius = targetSize * 0.3; // 30% of the target size for middle part
+    const centerRadius = targetSize * 0.125; // 12.5% of the target size for center part
+
+    let hitAreaRewardMultiplier = 1; // Base reward multiplier
+    let hitArea = 'outer'; // Default to outer area
+    // identify which part of target was hit
+    if (distance <= centerRadius) {
+      hitAreaRewardMultiplier = 10; // Center part hit
+      hitArea = 'center';
+    } else if (distance <= middleRadius) {
+      hitAreaRewardMultiplier = 3; // Middle part hit
+      hitArea = 'middle';
+    }
+
+    // Calculate the final Coin earned based on multipliers
+    const finalCoinEarned = targetHitCoinReward() * hitAreaRewardMultiplier;
+    // Update Coin state with the final amount earned
+    setCoin((prevCoin) => prevCoin + finalCoinEarned);
+    // increase xp by 1 * multipliers
+    const XPGained = baseXPGainPerHit * Math.max(1, combo) * xpGainMultiplier * hitAreaRewardMultiplier;
+    // Add the XP and check for Level up
+    addXPAndCheckLevelUp(XPGained);
+    // Increase combo multiplier by 1% * multipliers
+    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.01 * maxComboLimit * comboIncreaseMultiplier * hitAreaRewardMultiplier));
+    // Show the Coin gain popup
+    showPopup(event.clientX, event.clientY, 'gain', finalCoinEarned, hitArea);
+  };
   // target miss penalty
   const onTargetMiss = (event) => {
-    // Apply the loss based on the current loss percentage
-    //Coin loss
-    setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage)));
-    //combo loss
-    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo - prevCombo * (missPenaltyPercentage)));
-    //XP loss
-    setPlayerProgress(prevProgress => {
-      const newXP = Math.max(0, prevProgress.currentXP * (1 - missPenaltyPercentage));
-      return { ...prevProgress, currentXP: newXP };
-    });
-
-    // Show the Coin loss popup
-    showPopup(event.clientX, event.clientY, missPenaltyPercentage * 100, 'loss');
+    //check if shield is available
+    if (currentShield > 0) {
+      // Reduce shields if any are available
+      setCurrentShield(prevShield => Math.max(0, prevShield - 1));
+      // Show the "block" popup
+      showPopup(event.clientX, event.clientY, 'block');
+    } else {
+      // Apply the loss based on the current loss percentage
+      //Coin loss
+      setCoin(prevCoin => Math.max(0, prevCoin * (1 - missPenaltyPercentage)));
+      //combo loss
+      setCombo(prevCombo => Math.min(maxComboLimit, prevCombo - prevCombo * (missPenaltyPercentage)));
+      //XP loss
+      setPlayerProgress(prevProgress => {
+        const newXP = Math.max(0, prevProgress.currentXP * (1 - missPenaltyPercentage));
+        return { ...prevProgress, currentXP: newXP };
+      });
+      // Show the Coin loss popup
+      showPopup(event.clientX, event.clientY, 'loss', missPenaltyPercentage * 100);
+    }
   };
 
 
@@ -569,7 +774,7 @@ export default function AimTrainer() {
   // get current cost of an item depending on how many owned
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
     // Polynomial growth
-    return parseFloat(baseCost * Math.pow(1 + (growthRate * owned), 1.5)) * itemCostReductionMultiplier;
+    return parseFloat(baseCost * Math.pow(1 + (growthRate * owned), 1 + owned * 0.1)) * itemCostReductionMultiplier;
   };
 
   // Function to apply the effects of a purchased item
@@ -578,14 +783,14 @@ export default function AimTrainer() {
       case '+1 target':
         addTarget();
         break;
-      case '-10% combo decrease':
-        setComboDecreaseRate(prevRate => prevRate * 0.9); //log decrease
+      case '+5% combo sustain':
+        setComboDecreaseRate(prevRate => prevRate * 0.95); //log decrease
         break;
       case '-10% miss penalty':
         setMissPenaltyPercentage(prevPercentage => prevPercentage * 0.9); //log decrease
         break;
-      case '+10% target size':
-        setTargetSizeMultiplier(prevSize => prevSize + 0.1); //base 10% increase
+      case '+5% target size':
+        setTargetSizeMultiplier(prevSize => prevSize + 0.05); //base 10% increase
         break;
       case '+1 base XP':
         setBaseXPGainPerHit(prevXPGain => prevXPGain + 1);
@@ -595,6 +800,9 @@ export default function AimTrainer() {
         break;
       case '+10% XP':
         setXpGainMultiplier(prevMultiplier => prevMultiplier + 0.1);
+        break;
+      case '+10% shield regen':
+        setShieldRegenMultiplier(prevMultiplier => prevMultiplier + 0.1);
         break;
       default: console.log('Invalid item description:', itemBuff);
     }
@@ -625,9 +833,11 @@ export default function AimTrainer() {
 
 
   const [moveDelayPerBot, setMoveDelayPerBot] = useState(500); // base delay between each bot's move
+  const [botsInitialized, setBotsInitialized] = useState(false);
   // Function to add a new bot
   const addBot = () => {
     setBotPositions(prevBotPositions => [...prevBotPositions, generatePosition()]);
+    setBotsInitialized(true);
   };
   // check if bot overlaps target
   const doesBotOverlapTarget = (botPos, targetPos) => {
@@ -680,7 +890,10 @@ export default function AimTrainer() {
   };
   // Move bots sequentially at interval
   useEffect(() => {
-    if (!isGamePaused) {
+    if (!isGamePaused && botPositions.length > 0 && botsInitialized) {
+
+      moveBotsSequentially();
+
       // calculate total time for 1 full sequence 
       const totalSequenceTime = botPositions.length * moveDelayPerBot / botSpeedMultiplier;
       const intervalId = setInterval(() => {
@@ -688,7 +901,7 @@ export default function AimTrainer() {
       }, totalSequenceTime + moveDelayPerBot / botSpeedMultiplier); // delay between each sequence
       return () => clearInterval(intervalId);
     }
-  }, [botSpeedMultiplier, isGamePaused]); //dependencies
+  }, [botSpeedMultiplier, isGamePaused, moveDelayPerBot, botsInitialized]); //dependencies
 
 
   // Remove ghost targets after a certain time
@@ -703,59 +916,74 @@ export default function AimTrainer() {
 
 
 
-
-
   // Generate initial target positions
   useEffect(() => {
     setTargetPositions(targetPositions.map(() => generateTargetPosition()));
   }, []);
 
 
-  // Add event listeners for space bar to open shop
+
+  // Add event listeners for space bar to open shop and tab to open leaderboard
   useEffect(() => {
-    let timer = null;
-    let toggleMode = true; // default is toggle mode.
-    let holdMode = false;
+    let shopTimer = null;
+    let leaderboardTimer = null;
+    let shopToggleMode = true;
+    let leaderboardToggleMode = true;
+    let shopHoldMode = false;
+    let leaderboardHoldMode = false;
 
-    // keydown events
     const handleKeyDown = (event) => {
-      // handle space bar to shop logic
-      if (event.key === ' ' || event.code === 'Space') {
-        event.preventDefault(); // Prevent default behavior (e.g., page scrolling)
-        if (toggleMode) {
-          // If in toggle mode, open the shop and prepare to check for holding.
-          setIsShopOpen(previsShopOpen => !previsShopOpen);
-          toggleMode = false; // Disable toggle mode to prevent toggling when holding.
 
-          // Start a timer to check for holding.
-          timer = setTimeout(() => {
-            if (!holdMode) { // After X time in ms, if not already in hold mode, enable it.
-              holdMode = true;
-              toggleMode = false;
+      if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault();
+        if (shopToggleMode) {
+          setIsShopOpen(prev => !prev);
+          shopToggleMode = false;
+
+          shopTimer = setTimeout(() => {
+            if (!shopHoldMode) {
+              shopHoldMode = true;
+              shopToggleMode = false;
+            }
+          }, 150);
+        }
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        if (leaderboardToggleMode) {
+          setIsLeaderboardOpen(prev => !prev);
+          leaderboardToggleMode = false;
+
+          leaderboardTimer = setTimeout(() => {
+            if (!leaderboardHoldMode) {
+              leaderboardHoldMode = true;
+              leaderboardToggleMode = false;
             }
           }, 150);
         }
       }
     };
 
-    //keyup events
     const handleKeyUp = (event) => {
-      // handle space bar to shop logic
       if (event.key === ' ' || event.code === 'Space') {
-        clearTimeout(timer);
-        if (holdMode) {
+        clearTimeout(shopTimer);
+        if (shopHoldMode) {
           setIsShopOpen(false);
-          holdMode = false;
+          shopHoldMode = false;
         }
-        toggleMode = true;
+        shopToggleMode = true;
+      } else if (event.key === 'Tab') {
+        clearTimeout(leaderboardTimer);
+        if (leaderboardHoldMode) {
+          setIsLeaderboardOpen(false);
+          leaderboardHoldMode = false;
+        }
+        leaderboardToggleMode = true;
       }
     };
 
-    // Add event listeners for inputs
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
-    // Cleanup function to remove event listeners
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
@@ -775,7 +1003,6 @@ export default function AimTrainer() {
       window.removeEventListener('keydown', toggleMenu);
     };
   }, []);
-
 
 
 
@@ -838,6 +1065,7 @@ export default function AimTrainer() {
   const levelUpUpgradesRef = useRef(levelUpUpgrades);
   const volumeRef = useRef(volume);
   const isShopIndicatorOnRef = useRef(isShopIndicatorOn);
+  const playerNameRef = useRef(playerName);
   // Update the ref when the state changes
   useEffect(() => {
     scoreRef.current = Score;
@@ -848,8 +1076,9 @@ export default function AimTrainer() {
     levelUpUpgradesRef.current = levelUpUpgrades;
     volumeRef.current = volume;
     isShopIndicatorOnRef.current = isShopIndicatorOn;
+    playerNameRef.current = playerName;
 
-  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn]);
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn, playerName]);
   //local storage auto save in real time
   useEffect(() => {
     if (!isLoading) {
@@ -862,11 +1091,12 @@ export default function AimTrainer() {
         levelUpUpgrades: levelUpUpgradesRef.current.map(upgrade => ({ id: upgrade.id, owned: upgrade.owned })),
         volume: volumeRef.current,
         isShopIndicatorOn: isShopIndicatorOnRef.current,
+        playerName: playerNameRef.current,
       };
       // Update Local Storage in real-time
       localStorage.setItem('gameData', JSON.stringify(gameData));
     }
-  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn]);
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn, playerName, isLoading]);
   // Function to save game data to Firestore
   const autosaveGame = async (gameData) => {
     if (auth.currentUser) {
@@ -926,7 +1156,7 @@ export default function AimTrainer() {
             aim trainer
           </div >
           {/* glyphteck studio */}
-          <div div className="text-[3vh] lg:text-[5vh] leading-none" >
+          <div className="text-[3vh] lg:text-[5vh] leading-none" >
             by glyphteck studiⵙs
           </div>
         </div>
@@ -989,9 +1219,9 @@ export default function AimTrainer() {
       >
 
         {/* Ghost target instances */}
-        {ghostTargets.map((ghostTarget, index) => (
+        {ghostTargets.map((ghostTarget, ghostTargetID) => (
           <div
-            key={index}
+            key={ghostTargetID}
             className="absolute rounded-full"
             style={{
               left: `${ghostTarget.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
@@ -1003,27 +1233,12 @@ export default function AimTrainer() {
         ))}
 
         {/* target instances */}
-        {targetPositions.map((targetPosition, targetID) => (
-          <div
-            onMouseDown={(e) => {
-              e.preventDefault();
-              onTargetHit(targetID, e);
-              e.stopPropagation();
-            }}
-            className="absolute  bg-opacity-90 bg-[#e53935] rounded-full border-[3px] border-black"
-            style={{
-              left: `${targetPosition.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
-              top: `${targetPosition.y - (baseTargetSize * targetSizeMultiplier / 2)}px`,
-              width: `${baseTargetSize * targetSizeMultiplier}px`,
-              height: `${baseTargetSize * targetSizeMultiplier}px`,
-            }}
-          />
-        ))}
+        {targetPositions.map((targetPosition, targetID) => target(targetPosition, targetID))}
 
         {/* bot instances */}
-        {botPositions.map((botPosition, index) => (
+        {botPositions.map((botPosition, botID) => (
           <div
-            key={index}
+            key={botID}
             className="absolute pointer-events-none"
             style={{
               left: `${botPosition.x - 16}px`,
@@ -1036,7 +1251,7 @@ export default function AimTrainer() {
         ))}
       </div>
 
-      {/* HUD */}
+      {/* main HUD */}
       <div className="pointer-events-none">
         {/* Coin combo multiplier progress bar */}
         <div className=" backdrop-blur-sm border-b-[3px] border-black absolute top-0 left-0 w-full h-[5vh] flex items-center" style={{ backgroundColor: `${comboBarColor.replace('rgb', 'rgba').replace(')', ', 0.4)')}` }}>
@@ -1046,19 +1261,17 @@ export default function AimTrainer() {
           <div className="absolute left-0 h-full px-4 flex items-center">
             <span className="text-[3vh]">combo</span>
           </div>
-
           {/* Display current Coin combo multiplier in the center */}
           <div className="lowercase absolute left-0 right-0 h-full flex items-center justify-center">
-            <span className="text-[3vh]">x{combo > 1 ? formatAmount(combo) : '1'}</span>
+            {combo > 1 && <span className="text-[3vh]">x{formatAmount(combo)}</span>}
           </div>
-
         </div>
 
         {/* Target hit and coin and shield counter in corners */}
-        <div className="text-6xl md:text-8xl px-4 pt-2 md:px-8 md:pt-4 absolute top-[5vh] w-full flex flex-row justify-center items-center">
+        <div className="text-8xl px-8 pt-4 absolute top-[32px] w-full flex flex-row justify-center items-center">
           {Score > 0 ? <div>{Score}</div> : <div className="flex-grow"></div>}
         </div>
-        <div className="text-4xl md:text-6xl px-4 pt-2 md:px-8 md:pt-4 absolute top-[5vh] w-full flex flex-row justify-between items-center">
+        <div className="text-6xl px-8 pt-4 absolute top-[5vh] w-full flex flex-row justify-between items-center">
           {Coin > 0 ? <div>{formatAmount(Coin)} ₿</div> : <div className="flex-grow"></div>}
           {currentShield > 0 ?
             <div className='flex flex-row justify-center items-center gap-1 md:gap-3 ' >
@@ -1085,26 +1298,27 @@ export default function AimTrainer() {
           </div>
           {/* Display current XP in the middle of the bar */}
           <div className="absolute left-0 right-0 h-full flex items-center justify-center">
-            <span className="text-[3vh]">{formatAmount(playerProgress.currentXP)}/{XPNeededToLevelUp(playerProgress.currentLevel)}</span>
+            <span className="text-[3vh]">{formatAmount(playerProgress.currentXP)}/{formatAmount(XPNeededToLevelUp(playerProgress.currentLevel))}</span>
           </div>
         </div>
 
-        {/* Coin popups */}
-        {CoinPopups.map((popup) => (
+        {/* hit popups */}
+        {hitPopups.map((popup) => (
           <div
             key={popup.id}
-            className={`fixed transition-opacity ${popup.type === 'gain' ? 'animate-fadeOutGain text-[#F89414]' : 'animate-fadeOutLoss text-[#e53935]'}`}
+            className={`fixed transition-opacity ${popup.type === 'gain' ? 'animate-fadeOutGain' : 'animate-fadeOutLoss'}`}
             style={{
               left: `${popup.x - 80}px`,
               top: `${popup.y - 40}px`,
+              color: popup.color,
             }}
           >
-            {popup.amount > 0 ? `+${popup.amount}` : popup.amount}
+            {popup.displayText}
           </div>
         ))}
       </div>
 
-      {/* Coin store */}
+      {/*  SPACE Coin store */}
       {showStore && (
         <div className={`${isShopOpen ? 'animate-slideUp' : 'animate-slideDown'} absolute w-screen h-screen top-0 md:h-[85vh] md:top-[15vh] overflow-hidden backdrop-blur-2xl flex flex-col border-t-[3px] border-black`}>
           {/* item list */}
@@ -1127,6 +1341,36 @@ export default function AimTrainer() {
         </div>
       )}
 
+      {/* TAB leaderboard */}
+      {showLeaderboard && (
+        <div className={` backdrop-blur-xl absolute left-0 top-0 w-screen h-screen flex justify-center items-center border-r-[3px] border-black  ${isLeaderboardOpen ? 'animate-slideRight' : 'animate-slideLeft'}`}>
+          {playerName === "ANONYMOUS" ? (
+            <div>
+              <div className="text-7xl pb-4">choose a name</div>
+              <input
+                onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
+                type="text"
+                value={nameInput}
+                onChange={handleNameInput}
+                className="border-[3px] border-black bg-black bg-opacity-25 rounded-3xl px-6 py-0 uppercase cursor-pointer"
+
+              />
+            </div>
+          ) : (
+            <div>
+              <div className="text-7xl pb-4">Leaderboard</div>
+              {leaderboardData.map((gamedata, index) => (
+                <div key={gamedata.id} className="text-3xl flex gap-12 justify-between">
+                  <div>{index + 1}</div>
+                  <div>{gamedata.playerName}</div>
+                  <div>{gamedata.score}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Level up overlay */}
       {isLevelingUp && (
         <div className="absolute backdrop-blur-2xl w-screen h-screen flex flex-col justify-center items-center">
@@ -1145,7 +1389,7 @@ export default function AimTrainer() {
         </div>
       )}
 
-      {/* menu overlay */}
+      {/* ESC menu overlay */}
       {isMenuOpen && (
         <div className="absolute backdrop-blur-2xl w-screen h-screen">
           <div className='pt-8 absolute w-full text-9xl flex justify-center items-center' >aimtrainer</div>

@@ -17,7 +17,7 @@ module.exports = {
       },
       keyframes: {
         fadeOut: {
-          '0%': { opacity: '1' },
+          '0%': { opacity: '0.9' },
           '100%': { opacity: '0' },
         },
         slideUp: {
@@ -28,6 +28,14 @@ module.exports = {
           '0%': { transform: 'translateY(0)' },
           '100%': { transform: 'translateY(100%)' },
         },
+        slideLeft: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
+        slideRight: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
         flash: {
           '0%, 100%': { opacity: 0 },
           ' 10%, 90%': { opacity: 1 }
@@ -35,9 +43,11 @@ module.exports = {
       },
       animation: {
         fadeOutGain: 'fadeOut 500ms ease-out forwards',
-        fadeOutLoss: 'fadeOut 1000ms ease-out forwards',
+        fadeOutLoss: 'fadeOut 1200ms ease-out forwards',
         slideUp: 'slideUp 150ms ease-in-out forwards',
         slideDown: 'slideDown 150ms ease-in-out forwards',
+        slideLeft: 'slideLeft 300ms ease-in-out forwards',
+        slideRight: 'slideRight 300ms ease-in-out forwards',
         flash: 'flash 5s infinite',
       },
       backgroundImage: {
