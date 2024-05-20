@@ -109,6 +109,18 @@ export default function AimTrainer() {
       }
     }
   };
+
+
+  // State to determine if the user is on a mobile device
+  const [isMobile, setIsMobile] = useState(false);
+  // check if user is on mobile
+  useEffect(() => {
+    // This code now safely assumes it is running in the browser environment
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    setIsMobile(mobile);
+  }, []);
+
   // auto create user on load and load game data
   useEffect(() => {
     if (isMobile) {
@@ -1249,16 +1261,6 @@ export default function AimTrainer() {
   }, [isMobile]);
 
 
-
-  // State to determine if the user is on a mobile device
-  const [isMobile, setIsMobile] = useState(false);
-  // check if user is on mobile
-  useEffect(() => {
-    // This code now safely assumes it is running in the browser environment
-    const userAgent = navigator.userAgent.toLowerCase();
-    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-    setIsMobile(mobile);
-  }, []);
 
   // loading screen
   if (isLoading) {
