@@ -40,6 +40,10 @@ module.exports = {
           '0%, 100%': { opacity: 0 },
           ' 10%, 90%': { opacity: 1 }
         },
+        playondesktopflash: {
+          '0%, 100%': { opacity: 0 },
+          '50%': { opacity: 1 }
+        },
       },
       animation: {
         fadeOutGain: 'fadeOut 500ms ease-out forwards',
@@ -49,6 +53,7 @@ module.exports = {
         slideLeft: 'slideLeft 300ms ease-in-out forwards',
         slideRight: 'slideRight 300ms ease-in-out forwards',
         flash: 'flash 5s infinite',
+        playondesktopflash: 'playondesktopflash 2s infinite',
       },
       backgroundImage: {
         'bliss': "url('/bliss.jpg')",

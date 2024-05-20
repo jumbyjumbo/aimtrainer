@@ -27,6 +27,19 @@ const auth = getAuth(app);
 // main component (full app)
 export default function AimTrainer() {
 
+
+  // State to determine if the user is on a mobile device
+  const [isMobile, setIsMobile] = useState(false);
+  // check if user is on mobile
+  useEffect(() => {
+    // Detect mobile users
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    setIsMobile(mobile);
+  }, []);
+
+
+
   // Function to fetch game data from Firestore
   const fetchGameData = async (userId) => {
     const docRef = doc(db, 'players', userId);
@@ -52,9 +65,15 @@ export default function AimTrainer() {
   // apply level up effects
   const applyLevelUpEffectsBasedOnOwned = (updatedLevelUpUpgrades) => {
     updatedLevelUpUpgrades.forEach(upgrade => {
-      for (let i = 0; i < upgrade.owned; i++) {
-        applyLevelUpUpgrades(upgrade.buff);
-      }
+      // Apply effects based on the number owned for each rarity
+      upgrade.owned.forEach((count, index) => {
+        for (let i = 0; i < count; i++) {
+          // Determine the rarity based on the index
+          const rarity = Object.keys(rarities)[index]; // assuming rarities is an ordered array-like object
+          const effect = levelupUpgradeEffects[upgrade.id][rarity];
+          effect();
+        }
+      });
     });
   };
   // apply game data to current game state
@@ -72,14 +91,12 @@ export default function AimTrainer() {
       return { ...item, owned: loadedItem ? loadedItem.owned : item.owned };
     });
     setStoreItems(updatedStoreItems);
-
     // Update the level up upgrades with the loaded data
     const updatedLevelUpUpgrades = levelUpUpgrades.map(upgrade => {
       const loadedUpgrade = data.levelUpUpgrades.find(loadedUpgrade => loadedUpgrade.id === upgrade.id);
-      return { ...upgrade, owned: loadedUpgrade ? loadedUpgrade.owned : 0 };
+      return { ...upgrade, owned: loadedUpgrade ? [...loadedUpgrade.owned] : [0, 0, 0] };
     });
     setLevelUpUpgrades(updatedLevelUpUpgrades);
-
     // Apply the effects of the purchased items based on the loaded data
     applyItemEffectsBasedOnOwned(updatedStoreItems);
     applyLevelUpEffectsBasedOnOwned(updatedLevelUpUpgrades);
@@ -107,6 +124,10 @@ export default function AimTrainer() {
   };
   // auto create user on load and load game data
   useEffect(() => {
+    if (isMobile) {
+      setIsLoading(false); // Immediately set loading to false on mobile
+      return; // Skip the rest of the initialization
+    }
     // Check for an authenticated user
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -121,7 +142,7 @@ export default function AimTrainer() {
       }
     });
     return () => unsubscribe(); // Clean up the subscription
-  }, []);
+  }, [isMobile]);
 
 
   //player name state
@@ -182,6 +203,7 @@ export default function AimTrainer() {
   const [showStore, setShowStore] = useState(false);
   // shop animation effect
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     let timeoutId;
 
     if (isShopOpen) {
@@ -192,7 +214,7 @@ export default function AimTrainer() {
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isShopOpen]);
+  }, [isShopOpen, isMobile]);
 
 
   // leaderboard open state
@@ -207,7 +229,7 @@ export default function AimTrainer() {
   // get the data for the leaderboard get current player data from local storage and other players data from firestore
   const fetchLeaderboardData = () => {
     // get top 100 player data from firestore
-    const q = query(collection(db, 'players'), orderBy('score', 'desc'), limit(100));
+    const q = query(collection(db, 'players'), where('playerName', '!=', 'ANONYMOUS'), orderBy('score', 'desc'), limit(100));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       // Fetch current player's data from Local Storage
@@ -229,6 +251,7 @@ export default function AimTrainer() {
 
   // Leaderboard animation effect + leaderboard data fetch
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     let timeoutId;
     let unsubscribe = null;
 
@@ -246,7 +269,7 @@ export default function AimTrainer() {
         unsubscribe(); // Clean up the Firestore listener when the leaderboard is closed
       }
     };
-  }, [isLeaderboardOpen]);
+  }, [isLeaderboardOpen, isMobile]);
 
 
 
@@ -260,8 +283,9 @@ export default function AimTrainer() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // pause game when menu or Level up overlay is open
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     setIsGamePaused(isMenuOpen || isLevelingUp || isLeaderboardOpen);
-  }, [isMenuOpen, isLevelingUp]);
+  }, [isMenuOpen, isLevelingUp, isLeaderboardOpen, isMobile]);
 
 
 
@@ -272,6 +296,7 @@ export default function AimTrainer() {
   const targetPositionsRef = useRef(targetPositions);
   // Update the ref when the state changes
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     targetPositionsRef.current = targetPositions;
   }, [targetPositions]);
   //  target hit interval in milliseconds
@@ -292,13 +317,14 @@ export default function AimTrainer() {
 
 
 
-  // number of shields 🛡🛡🛡🛡🛡
+  // number of shields 🛡
   const [maxShield, setMaxShield] = useState(1);
   const [currentShield, setCurrentShield] = useState(0);
   const [shieldRegenRate, setShieldRegenRate] = useState(10000);
   const [shieldRegenMultiplier, setShieldRegenMultiplier] = useState(1);
   // Shield regeneration logic
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     if (maxShield > 0 && currentShield < maxShield) {
       const intervalId = setInterval(() => {
         setCurrentShield(prevShield => Math.min(maxShield, prevShield + 1));
@@ -306,6 +332,15 @@ export default function AimTrainer() {
       return () => clearInterval(intervalId);
     }
   }, [currentShield, maxShield, shieldRegenRate, shieldRegenMultiplier]);
+  // whenever max shield is increased, set current shield to max shield
+  useEffect(() => {
+    if (isMobile) return; // ignore on mobile
+    // Only increase currentShield if it is less than the new maxShield
+    if (currentShield < maxShield) {
+      setCurrentShield(maxShield);
+    }
+  }, [maxShield, isMobile]);
+
 
   // Store items
   const [storeItems, setStoreItems] = useState([
@@ -321,6 +356,7 @@ export default function AimTrainer() {
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
   // get the next affordable item
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     // Filter unowned and unaffordable items
     const unownedItems = storeItems.filter(item => item.owned === 0 && Coin < calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
 
@@ -333,14 +369,15 @@ export default function AimTrainer() {
     } else {
       setNextAffordableItemId(null);
     }
-  }, [Coin, storeItems]);
+  }, [Coin, storeItems, isMobile]);
   // New state to track if the player can afford any shop item
   const [canAfford, setCanAfford] = useState(false);
   // Update canAfford state whenever Coins or storeItems change
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     const affordable = storeItems.some(item => Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
     setCanAfford(affordable);
-  }, [Coin, storeItems]);
+  }, [Coin, storeItems, isMobile]);
 
 
   // amount of combo and Coin loss on miss in percentage
@@ -363,11 +400,8 @@ export default function AimTrainer() {
   //  bot speed multiplier
   const [botSpeedMultiplier, setBotSpeedMultiplier] = useState(1);
   // Multipliers for coin and XP gains
-  const [coinShopMultiplier, setCoinShopMultiplier] = useState(1.0);
+  const [coinLevelMultiplier, setCoinLevelMultiplier] = useState(1.0);
   const [xpGainMultiplier, setXpGainMultiplier] = useState(1.0);
-
-
-
 
 
   // XP progress towards next Level
@@ -408,103 +442,122 @@ export default function AimTrainer() {
 
 
 
-  // Level-Up Upgrades
+  // Level-Up Upgrades [common, rare, legendary] ⵙ ₿ speed reward shield
   const [levelUpUpgrades, setLevelUpUpgrades] = useState([
-    { id: 1, buff: "+1 ⵙ", owned: 0 },
-    { id: 3, buff: "+10% ₿", owned: 0 },
-    { id: 4, buff: "+10% speed reward", owned: 0 },
-    { id: 5, buff: "+1 shield", owned: 0 },
+    { id: 'bot', owned: [0, 0, 0] },
+    { id: 'coin_bonus', owned: [0, 0, 0] },
+    { id: 'speed_bonus', owned: [0, 0, 0] },
+    { id: 'shield', owned: [0, 0, 0] },
   ]);
-  // Function to apply the effects of a level-up upgrade
-  const applyLevelUpUpgrades = (buff) => {
-    switch (buff) {
-      case "+1 base ₿":
-        setBaseCoinReward(baseCoinReward => baseCoinReward + 1);
-        break;
-      case "+1 ⵙ":
-        addBot();
-        break;
-      case "+10% ⵙ speed":
-        setBotSpeedMultiplier(prevMultiplier => prevMultiplier + 0.1);
-        break;
-      case "+10% ₿":
-        setCoinShopMultiplier(prevMultiplier => prevMultiplier + 0.1);
-        break;
-      case "+10% speed reward":
-        setIntervalSpeedRewardMultiplier(prevMultiplier => prevMultiplier + 0.1);
-        break;
-      case "+1 shield":
-        setMaxShield(prevShield => prevShield + 1);
-        setCurrentShield(prevCurrentShield => prevCurrentShield + 1);
-        break;
-      default:
-        console.log("Invalid upgrade description:", buff);
+  // 3 rarities with probabilities
+  const rarities = {
+    common: 0.8,
+    rare: 0.15,
+    legendary: 0.05,
+  };
+  // get a rarity based on probabilities
+  const determineRarity = () => {
+    const rand = Math.random();
+    let cumulativeProbability = 0;
+    for (const rarity in rarities) {
+      cumulativeProbability += rarities[rarity];
+      if (rand < cumulativeProbability) {
+        return rarity;
+      }
     }
+    return 'common'; // Default to common if no match is found
+  };
+  // what each level up upgrade actually does
+  const levelupUpgradeEffects = {
+    bot: {
+      common: () => addBot(1),
+      rare: () => addBot(2),
+      legendary: () => addBot(3),
+    },
+    coin_bonus: {
+      common: () => setCoinLevelMultiplier(prev => prev + 0.1),
+      rare: () => setCoinLevelMultiplier(prev => prev + 0.2),
+      legendary: () => setCoinLevelMultiplier(prev => prev + 0.3),
+    },
+    speed_bonus: {
+      common: () => setIntervalSpeedRewardMultiplier(prev => prev + 0.2),
+      rare: () => setIntervalSpeedRewardMultiplier(prev => prev + 0.3),
+      legendary: () => setIntervalSpeedRewardMultiplier(prev => prev + 0.5),
+    },
+    shield: {
+      common: () => setMaxShield(prev => prev + 1),
+      rare: () => setMaxShield(prev => prev + 2),
+      legendary: () => setMaxShield(prev => prev + 3),
+    },
   };
   // get 3 random levelUpUpgrades
   const getRandomUpgrades = () => {
-    // Shuffle the array using the Fisher-Yates algorithm
-    for (let i = levelUpUpgrades.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [levelUpUpgrades[i], levelUpUpgrades[j]] = [levelUpUpgrades[j], levelUpUpgrades[i]];
-    }
-
-    // Return the first 3 items of the shuffled array
-    return levelUpUpgrades.slice(0, 3);
+    const shuffledUpgrades = [...levelUpUpgrades].sort(() => Math.random() - 0.5);
+    return shuffledUpgrades.slice(0, 3).map(upgrade => {
+      const rarity = determineRarity();
+      return { ...upgrade, rarity };
+    });
   };
-  // on click effect for level up upgrade
+  // apply the selected level up upgrade
+  const applyLevelUpUpgradeEffect = (selectedUpgrade) => {
+    const { id, rarity } = selectedUpgrade;
+    const effect = levelupUpgradeEffects[id][rarity];
+    effect();
+  };
+  // on click selection of level up upgrade
   const selectLevelUpUpgrade = (selectedUpgrade) => {
-    //if levelup overlay shouldnt be interactable yet, do nothing
-    if (!isLevelUpInteractable) {
-      return;
-    }
-    // Increment 'owned' for the selected upgrade
+    // If level up overlay shouldn't be interactable yet, do nothing
+    if (!isLevelUpInteractable) return;
+    // Get the index of the selected upgrade's rarity
+    const rarityIndex = Object.keys(rarities).indexOf(selectedUpgrade.rarity);
+    // Increment 'owned' for the selected upgrade's rarity
     setLevelUpUpgrades(upgrades =>
       upgrades.map(upgrade =>
-        upgrade.id === selectedUpgrade.id ? { ...upgrade, owned: upgrade.owned + 1 } : upgrade
+        upgrade.id === selectedUpgrade.id ? {
+          ...upgrade,
+          owned: upgrade.owned.map((count, index) => index === rarityIndex ? count + 1 : count)
+        } : upgrade
       )
     );
-
     // Apply the selected upgrade's effect
-    applyLevelUpUpgrades(selectedUpgrade.buff);
-
+    applyLevelUpUpgradeEffect(selectedUpgrade);
     // Close the level-up overlay
     setIsLevelingUp(false);
   };
-
-
-
-
-
-  // Format to 3 digits max and add suffix if needed
-  const formatAmount = (amount) => {
-    const suffixes = ['', 'K', 'M', 'B', 'T'];
-    let suffixIndex = 0;
-
-    // Divide by 1000 and add suffix until the amount is less than 1000
-    while (amount >= 1000 && suffixIndex < suffixes.length - 1) {
-      amount /= 1000;
-      suffixIndex++;
+  // Function to get the display for each upgrade type
+  const getUpgradeDisplay = (upgrade) => {
+    switch (upgrade.id) {
+      case 'bot':
+        return (
+          <div>
+            +{upgrade.rarity === 'common' ? '1' : upgrade.rarity === 'rare' ? '2' : '3'} ⵙ
+          </div>
+        );
+      case 'coin_bonus':
+        return (
+          <div>
+            +{upgrade.rarity === 'common' ? '10' : upgrade.rarity === 'rare' ? '20' : '30'}% coin bonus
+          </div>
+        );
+      case 'speed_bonus':
+        return (
+          <div>
+            +{upgrade.rarity === 'common' ? '20' : upgrade.rarity === 'rare' ? '30' : '50'}% speed bonus
+          </div>
+        );
+      case 'shield':
+        return (
+          <div className='flex flex-row gap-4 justify-center items-center'>
+            +{upgrade.rarity === 'common' ? '1' : upgrade.rarity === 'rare' ? '2' : '3'} max <img src="shield.png" className='h-14' alt="Shield" />
+          </div>
+        );
+      default:
+        return (
+          <div>
+            Unknown Upgrade
+          </div>
+        );
     }
-
-    // Format amount based on its value
-    let roundedAmount;
-    if (amount >= 100) {
-      roundedAmount = Math.round(amount); // No decimal places
-    } else if (amount >= 10) {
-      roundedAmount = Math.floor(amount * 10) / 10; // 1 decimal place
-    } else {
-      roundedAmount = Math.floor(amount * 100) / 100; // 2 decimal places
-    }
-
-    // Handle trailing zeros
-    let formattedAmount = roundedAmount.toString();
-    if (formattedAmount.indexOf('.') !== -1) {
-      formattedAmount = formattedAmount.replace(/\.?0+$/, '');
-    }
-
-    // Return the formatted amount with the suffix
-    return `${formattedAmount}${suffixes[suffixIndex]}`;
   };
 
 
@@ -578,6 +631,7 @@ export default function AimTrainer() {
 
   // Coin combo multiplier decrease (variable rate)
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     let intervalId;
     if (!isGamePaused) {
       intervalId = setInterval(() => {
@@ -594,7 +648,7 @@ export default function AimTrainer() {
         clearInterval(intervalId);
       }
     };
-  }, [comboDecreaseRate, maxComboLimit, isGamePaused]); //dependencies
+  }, [comboDecreaseRate, maxComboLimit, isGamePaused, isMobile]); //dependencies
 
 
 
@@ -604,10 +658,11 @@ export default function AimTrainer() {
   const hitSoundRef = useRef(null);
   // Preload the hit sound on game load
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     // Preload the hit sound and store it in the ref
     hitSoundRef.current = new Audio('/hitbubble.mp3');
     hitSoundRef.current.load();
-  }, []);
+  }, [isMobile]);
   // Function to play the hit sound
   const playHitSound = () => {
     if (hitSoundRef.current) {
@@ -695,8 +750,8 @@ export default function AimTrainer() {
     setLastTargetHitTimestamp(currentTime);
     // base Coin reward based on last target hit interval
     const speedCoinBonus = calculateIntervalSpeedCoinBonus(timeDifference);
-    // base coin reward * speed * combo * shop multiplier
-    return 0.01 * speedCoinBonus * Math.max(1, combo) * coinShopMultiplier;
+    // base coin reward * speed * combo * multiplier
+    return 0.01 * speedCoinBonus * Math.max(1, combo) * coinLevelMultiplier;
   };
 
   // when u hit a target
@@ -724,7 +779,7 @@ export default function AimTrainer() {
     let hitArea = 'outer'; // Default to outer area
     // identify which part of target was hit
     if (distance <= centerRadius) {
-      hitAreaRewardMultiplier = 10; // Center part hit
+      hitAreaRewardMultiplier = 5; // Center part hit
       hitArea = 'center';
     } else if (distance <= middleRadius) {
       hitAreaRewardMultiplier = 3; // Middle part hit
@@ -774,7 +829,7 @@ export default function AimTrainer() {
   // get current cost of an item depending on how many owned
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
     // Polynomial growth
-    return parseFloat(baseCost * Math.pow(1 + (growthRate * owned), 1 + owned * 0.1)) * itemCostReductionMultiplier;
+    return parseFloat(baseCost * Math.pow(1 + (growthRate * owned), 1 + owned * 0.01)) * itemCostReductionMultiplier;
   };
 
   // Function to apply the effects of a purchased item
@@ -834,9 +889,9 @@ export default function AimTrainer() {
 
   const [moveDelayPerBot, setMoveDelayPerBot] = useState(500); // base delay between each bot's move
   const [botsInitialized, setBotsInitialized] = useState(false);
-  // Function to add a new bot
-  const addBot = () => {
-    setBotPositions(prevBotPositions => [...prevBotPositions, generatePosition()]);
+  // Function to add new bots ⵙ
+  const addBot = (botAmount = 1) => {
+    setBotPositions(prevPositions => [...prevPositions, ...Array(botAmount).fill().map(() => generatePosition())]);
     setBotsInitialized(true);
   };
   // check if bot overlaps target
@@ -890,6 +945,7 @@ export default function AimTrainer() {
   };
   // Move bots sequentially at interval
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     if (!isGamePaused && botPositions.length > 0 && botsInitialized) {
 
       moveBotsSequentially();
@@ -901,23 +957,25 @@ export default function AimTrainer() {
       }, totalSequenceTime + moveDelayPerBot / botSpeedMultiplier); // delay between each sequence
       return () => clearInterval(intervalId);
     }
-  }, [botSpeedMultiplier, isGamePaused, moveDelayPerBot, botsInitialized]); //dependencies
+  }, [botSpeedMultiplier, isGamePaused, moveDelayPerBot, botsInitialized, isMobile]); //dependencies
 
 
   // Remove ghost targets after a certain time
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     const interval = setInterval(() => {
       const now = Date.now();
       setGhostTargets(prevTargets => prevTargets.filter(target => now - target.timestamp < 500));
     }, 50); // Run this every 50ms to check for ghost targets to remove
 
     return () => clearInterval(interval);
-  }, [ghostTargets]);
+  }, [ghostTargets, isMobile]);
 
 
 
   // Generate initial target positions
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     setTargetPositions(targetPositions.map(() => generateTargetPosition()));
   }, []);
 
@@ -925,6 +983,7 @@ export default function AimTrainer() {
 
   // Add event listeners for space bar to open shop and tab to open leaderboard
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     let shopTimer = null;
     let leaderboardTimer = null;
     let shopToggleMode = true;
@@ -988,9 +1047,10 @@ export default function AimTrainer() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [isMobile]);
   // Event listener for Esc key to toggle menu overlay
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     const toggleMenu = (event) => {
       if (event.key === "Escape") {
         setIsMenuOpen(prevState => !prevState);
@@ -1002,9 +1062,39 @@ export default function AimTrainer() {
     return () => {
       window.removeEventListener('keydown', toggleMenu);
     };
-  }, []);
+  }, [isMobile]);
 
 
+  // Format to 3 digits max and add suffix if needed
+  const formatAmount = (amount) => {
+    const suffixes = ['', 'K', 'M', 'B', 'T'];
+    let suffixIndex = 0;
+
+    // Divide by 1000 and add suffix until the amount is less than 1000
+    while (amount >= 1000 && suffixIndex < suffixes.length - 1) {
+      amount /= 1000;
+      suffixIndex++;
+    }
+
+    // Format amount based on its value
+    let roundedAmount;
+    if (amount >= 100) {
+      roundedAmount = Math.round(amount); // No decimal places
+    } else if (amount >= 10) {
+      roundedAmount = Math.floor(amount * 10) / 10; // 1 decimal place
+    } else {
+      roundedAmount = Math.floor(amount * 100) / 100; // 2 decimal places
+    }
+
+    // Handle trailing zeros
+    let formattedAmount = roundedAmount.toString();
+    if (formattedAmount.indexOf('.') !== -1) {
+      formattedAmount = formattedAmount.replace(/\.?0+$/, '');
+    }
+
+    // Return the formatted amount with the suffix
+    return `${formattedAmount}${suffixes[suffixIndex]}`;
+  };
 
   // Combo bar color state
   const [comboBarColor, setComboBarColor] = useState('rgb(248,148,20)'); // Start with orange
@@ -1048,12 +1138,13 @@ export default function AimTrainer() {
   };
   // Call the updateComboBarColor function when the component mounts
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     // Start the animation loop
     const animationFrameId = requestAnimationFrame(updateComboBarColor);
 
     // Cleanup function to cancel the animation frame when the component unmounts
     return () => cancelAnimationFrame(animationFrameId);
-  }, [lastTargetHitTimestamp]); // Dependencies array
+  }, [lastTargetHitTimestamp, isMobile]); // Dependencies array
 
 
   // data refs for game data autosave
@@ -1068,6 +1159,7 @@ export default function AimTrainer() {
   const playerNameRef = useRef(playerName);
   // Update the ref when the state changes
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     scoreRef.current = Score;
     coinRef.current = Coin;
     xpRef.current = playerProgress.currentXP;
@@ -1077,10 +1169,10 @@ export default function AimTrainer() {
     volumeRef.current = volume;
     isShopIndicatorOnRef.current = isShopIndicatorOn;
     playerNameRef.current = playerName;
-
-  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn, playerName]);
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn, playerName, isMobile]);
   //local storage auto save in real time
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     if (!isLoading) {
       const gameData = {
         score: scoreRef.current,
@@ -1088,7 +1180,7 @@ export default function AimTrainer() {
         xp: xpRef.current,
         level: levelRef.current,
         storeItems: storeItemsRef.current.map(item => ({ id: item.id, owned: item.owned })),
-        levelUpUpgrades: levelUpUpgradesRef.current.map(upgrade => ({ id: upgrade.id, owned: upgrade.owned })),
+        levelUpUpgrades: levelUpUpgradesRef.current.map(upgrade => ({ id: upgrade.id, owned: [...upgrade.owned] })),
         volume: volumeRef.current,
         isShopIndicatorOn: isShopIndicatorOnRef.current,
         playerName: playerNameRef.current,
@@ -1096,7 +1188,7 @@ export default function AimTrainer() {
       // Update Local Storage in real-time
       localStorage.setItem('gameData', JSON.stringify(gameData));
     }
-  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn, playerName, isLoading]);
+  }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn, playerName, isLoading, isMobile]);
   // Function to save game data to Firestore
   const autosaveGame = async (gameData) => {
     if (auth.currentUser) {
@@ -1116,11 +1208,11 @@ export default function AimTrainer() {
   };
   //auto save game data on interval to firestore
   useEffect(() => {
+    if (isMobile) return; // ignore on mobile
     const autosaveAction = () => {
       // Fetch the latest game data from Local Storage
       const gameDataString = localStorage.getItem('gameData');
       const gameData = JSON.parse(gameDataString);
-
       // Check if gameData is not null
       if (gameData) {
         // Autosave the game data to Firestore
@@ -1129,22 +1221,46 @@ export default function AimTrainer() {
           .catch(error => console.error('Error autosaving game data to Firestore:', error));
       }
     };
-
     const autosaveInterval = setInterval(autosaveAction, 1000 * 60 * 10); // 10 minute interval
     return () => clearInterval(autosaveInterval);
-  }, []);
+  }, [isMobile]);
 
 
 
-  // State to determine if the user is on a mobile device
-  const [isMobile, setIsMobile] = useState(false);
-  // check if user is on mobile
+  // Mobile decorative targets
+  const [backgroundTargets, setBackgroundTargets] = useState(Array(5).fill().map(() => generatePosition()));
+  // Generate decorative target positions
   useEffect(() => {
-    // Detect mobile users
-    const userAgent = navigator.userAgent.toLowerCase();
-    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-    setIsMobile(mobile);
-  }, []);
+    if (!isMobile) return; // Ensure this runs only on mobile
+    let lastTargetIndex = null; // Variable to store the last updated target index
+    const regeneratePosition = () => {
+      let currentTargetIndex;
+      do {
+        // Randomly pick an index from 0 to 4, ensuring it's not the same as the last
+        currentTargetIndex = Math.floor(Math.random() * 5);
+      } while (currentTargetIndex === lastTargetIndex); // Repeat if it's the same as the last index
+      setBackgroundTargets(currentTargets =>
+        currentTargets.map((target, index) =>
+          index === currentTargetIndex ? generatePosition() : target
+        )
+      );
+      // Update lastTargetIndex to the newly regenerated index
+      lastTargetIndex = currentTargetIndex;
+      // Generate a random interval between 180ms and 360ms
+      const nextTimeout = Math.floor(Math.random() * (360 - 180 + 1) + 180);
+      // Call regeneratePosition again after the random interval
+      setTimeout(regeneratePosition, nextTimeout);
+    };
+    // Start the recursive timeout loop
+    regeneratePosition();
+    // Cleanup function to clear timeout when the component unmounts or isMobile changes
+    return () => {
+      if (regeneratePosition) {
+        clearTimeout(regeneratePosition);
+      }
+    };
+  }, [isMobile]);
+
 
   // loading screen
   if (isLoading) {
@@ -1152,12 +1268,12 @@ export default function AimTrainer() {
       <div className="h-screen w-screen overflow-hidden ">
         <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
           {/* game title */}
-          < div className="text-[10vh] lg:text-[20vh] leading-none text-center" >
+          < div className="text-6xl lg:text-[20vh] leading-none text-center" >
             aim trainer
           </div >
           {/* glyphteck studio */}
-          <div className="text-[3vh] lg:text-[5vh] leading-none" >
-            by glyphteck studiⵙs
+          <div className="text-3xl lg:text-[5vh] leading-none" >
+            by glyphteck studiⵙ
           </div>
         </div>
       </div>
@@ -1166,23 +1282,22 @@ export default function AimTrainer() {
   // Mobile warning screen
   if (isMobile) {
     return (
-      <div className="h-screen w-screen overflow-hidden">
-        <video autoPlay muted loop playsInline className='absolute top-0 left-0 blur-md opacity-60 w-full h-full object-fill'>
-          <source src="bgaimtrainer.mp4" type="video/mp4" />
-        </video>
-        <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
-          {/* mobile warning */}
-          <div className="text-[8vh] lg:text-[15vh] leading-none text-center">
-            m0bile n0t supp0rted
+      <div className="h-screen w-screen overflow-hidden pointer-events-none">
+        <div className="">
+          {backgroundTargets.map((pos, index) => (target(pos, index)))}
+        </div>
+        <div className='animate-playondesktopflash absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center'>
+          <div className="text-6xl leading-none text-center">
+            mⵙbile nⵙt suppⵙrted
           </div>
-          {/* desktop only */}
-          <div className="text-[3vh] lg:text-[5vh] leading-none text-center">
-            play ⵙn desktⵙp
+          <div className="text-3xl leading-none text-center ">
+            play on desktop
           </div>
         </div>
       </div>
     );
   }
+
   // Main game
   return (
     <main className="h-screen w-screen bg-cover bg-center">
@@ -1276,7 +1391,7 @@ export default function AimTrainer() {
           {currentShield > 0 ?
             <div className='flex flex-row justify-center items-center gap-1 md:gap-3 ' >
               {currentShield}
-              <img src="shield.png" className='h-8 md:h-14' alt="Shield" />
+              <img src="shield.png" className='h-14' alt="Shield" />
             </div> : <div className="flex-grow"></div>}
         </div>
 
@@ -1379,10 +1494,10 @@ export default function AimTrainer() {
             {offeredUpgrades.map((upgrade, index) => (
               <div
                 key={upgrade.id}
-                className={`bg-white bg-opacity-50 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl ${!isLevelUpInteractable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`${upgrade.rarity === 'legendary' ? 'bg-[#e53935]' : upgrade.rarity === 'rare' ? 'bg-[#F89414]' : 'bg-[#3b82f6]'} bg-opacity-30 px-[4vw] py-[4vh] flex justify-center items-center leading-none text-center border-[4px] border-black rounded-3xl ${!isLevelUpInteractable ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onMouseUp={() => selectLevelUpUpgrade(upgrade)}
               >
-                {upgrade.buff}
+                {getUpgradeDisplay(upgrade)}
               </div>
             ))}
           </div>
