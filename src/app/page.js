@@ -27,21 +27,6 @@ const auth = getAuth(app);
 // main component (full app)
 export default function AimTrainer() {
 
-
-  // State to determine if the user is on a mobile device
-  const [isMobile, setIsMobile] = useState(false);
-  // check if user is on mobile
-  useEffect(() => {
-    // Ensure code runs only in client-side environment
-    if (typeof window !== "undefined") {
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-      setIsMobile(mobile);
-    }
-  }, []);
-
-
-
   // Function to fetch game data from Firestore
   const fetchGameData = async (userId) => {
     const docRef = doc(db, 'players', userId);
@@ -1263,6 +1248,17 @@ export default function AimTrainer() {
     };
   }, [isMobile]);
 
+
+
+  // State to determine if the user is on a mobile device
+  const [isMobile, setIsMobile] = useState(false);
+  // check if user is on mobile
+  useEffect(() => {
+    // This code now safely assumes it is running in the browser environment
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    setIsMobile(mobile);
+  }, []);
 
   // loading screen
   if (isLoading) {
