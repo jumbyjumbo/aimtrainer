@@ -580,6 +580,9 @@ export default function AimTrainer() {
 
   // Function to generate a random position on the screen
   const generatePosition = () => {
+    if (typeof window === 'undefined') {
+      return { x: 0, y: 0 }; // Return default position or handle as needed for SSR
+    }
     // Calculate the target's radius.
     const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
 
