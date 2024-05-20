@@ -1236,7 +1236,7 @@ export default function AimTrainer() {
 
 
   // Mobile decorative targets
-  const [backgroundTargets, setBackgroundTargets] = useState(Array(8).fill().map(() => generatePosition()));
+  const [backgroundTargets, setBackgroundTargets] = useState(Array(20).fill().map(() => generatePosition()));
   // Generate decorative target positions
   useEffect(() => {
     if (!isMobile) return; // Ensure this runs only on mobile
@@ -1245,7 +1245,7 @@ export default function AimTrainer() {
       let currentTargetIndex;
       do {
         // pick random target index
-        currentTargetIndex = Math.floor(Math.random() * 8);
+        currentTargetIndex = Math.floor(Math.random() * 20);
       } while (currentTargetIndex === lastTargetIndex); // Repeat if it's the same as the last index
       setBackgroundTargets(currentTargets =>
         currentTargets.map((target, index) =>
