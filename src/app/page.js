@@ -1236,7 +1236,7 @@ export default function AimTrainer() {
 
 
   // Mobile decorative targets
-  const [backgroundTargets, setBackgroundTargets] = useState(Array(5).fill().map(() => generatePosition()));
+  const [backgroundTargets, setBackgroundTargets] = useState(Array(8).fill().map(() => generatePosition()));
   // Generate decorative target positions
   useEffect(() => {
     if (!isMobile) return; // Ensure this runs only on mobile
@@ -1244,8 +1244,8 @@ export default function AimTrainer() {
     const regeneratePosition = () => {
       let currentTargetIndex;
       do {
-        // Randomly pick an index from 0 to 4, ensuring it's not the same as the last
-        currentTargetIndex = Math.floor(Math.random() * 5);
+        // pick random target index
+        currentTargetIndex = Math.floor(Math.random() * 8);
       } while (currentTargetIndex === lastTargetIndex); // Repeat if it's the same as the last index
       setBackgroundTargets(currentTargets =>
         currentTargets.map((target, index) =>
@@ -1296,8 +1296,8 @@ export default function AimTrainer() {
           {backgroundTargets.map((pos, index) => (target(pos, index)))}
         </div>
         <div className='animate-playondesktopflash absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center'>
-          <div className="text-6xl leading-none text-center">
-            mⵙbile nⵙt suppⵙrted
+          <div className="text-5xl leading-none text-center">
+            mobile not supported
           </div>
           <div className="text-3xl leading-none text-center ">
             play on desktop
