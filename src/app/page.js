@@ -6,8 +6,7 @@ import { getFirestore, doc, setDoc, getDoc, getDocs, updateDoc, query, collectio
 //auth
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 
-// Firebase config
-const firebaseConfig = {
+const firebaseConfig = { // Firebase config
   apiKey: "AIzaSyALhqznQk-LWgFCzjzP3OHfm624ZLFO_cs",
   authDomain: "aimtrainer-6dec5.firebaseapp.com",
   projectId: "aimtrainer-6dec5",
@@ -16,20 +15,12 @@ const firebaseConfig = {
   appId: "1:281642412398:web:5b46861f479c81077c797f",
   measurementId: "G-G29YT9VKFG"
 };
-// Init firebase
-const app = initializeApp(firebaseConfig);
-// init db
-const db = getFirestore(app);
-// init auth
-const auth = getAuth(app);
-
-
-
-
+const app = initializeApp(firebaseConfig); // Init firebase
+const db = getFirestore(app); // init db
+const auth = getAuth(app); // init auth
 
 // main component (full app)
 export default function AimTrainer() {
-
 
   // State to determine if the user is on a mobile device
   const [isMobile, setIsMobile] = useState(false);
@@ -42,7 +33,6 @@ export default function AimTrainer() {
       setIsMobile(mobile);
     }
   }, []);
-
 
   // Function to fetch game data from Firestore
   const fetchGameData = async (userId) => {
@@ -126,7 +116,6 @@ export default function AimTrainer() {
       }
     }
   };
-
   // auto create user on load and load game data
   useEffect(() => {
     if (isMobile) {
@@ -158,7 +147,6 @@ export default function AimTrainer() {
   const handleNameInput = (e) => {
     setNameInput(e.target.value);
   };
-
   // Function to handle name submission
   const handleNameSubmit = async () => {
     if (nameInput.trim() !== "" && nameInput.trim().toUpperCase() !== "ANONYMOUS") {
@@ -197,18 +185,16 @@ export default function AimTrainer() {
   const [volume, setVolume] = useState(0.2);
   // app loading state
   const [isLoading, setIsLoading] = useState(true);
-  // game paused state
-  const [isGamePaused, setIsGamePaused] = useState(false);
 
 
-  // Store open state
+  // shop states and animation effect
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isShopIndicatorOn, setIsShopIndicatorOn] = useState(true);
   // render store
   const [showStore, setShowStore] = useState(false);
   // shop animation effect
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     let timeoutId;
 
     if (isShopOpen) {
@@ -226,11 +212,8 @@ export default function AimTrainer() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   //render leaderboard
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  // leaderboard loading state
-  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
   // leaderboard data state
   const [leaderboardData, setLeaderboardData] = useState([]);
-
   // get the data for the leaderboard get current player data from local storage and other players data from firestore
   const fetchLeaderboardData = () => {
     // get top 100 player data from firestore
@@ -253,10 +236,9 @@ export default function AimTrainer() {
     });
     return unsubscribe;
   };
-
   // Leaderboard animation effect + leaderboard data fetch
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     let timeoutId;
     let unsubscribe = null;
 
@@ -277,38 +259,121 @@ export default function AimTrainer() {
   }, [isLeaderboardOpen, isMobile]);
 
 
-
-
-
   // game state when Leveling up
   const [isLevelingUp, setIsLevelingUp] = useState(false);
   // is the level up screen interactable?
   const [isLevelUpInteractable, setIsLevelUpInteractable] = useState(true);
   // menu overlay state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // pause game when menu or Level up overlay is open
-  useEffect(() => {
-    if (isMobile) return; // ignore on mobile
-    setIsGamePaused(isMenuOpen || isLevelingUp || isLeaderboardOpen);
+  // game paused state
+  const [isGamePaused, setIsGamePaused] = useState(false);
+  useEffect(() => { // pause game when other ui is open
+    if (isMobile) return;
+    const isGameShouldBePaused = isMenuOpen || isLevelingUp || isLeaderboardOpen;
+    setIsGamePaused(isGameShouldBePaused);
   }, [isMenuOpen, isLevelingUp, isLeaderboardOpen, isMobile]);
 
-
+  // Function to generate a random position on screen
+  const generatePosition = () => {
+    if (typeof window === 'undefined') {  // Return 0,0 if window is not available
+      return { x: 0, y: 0 };
+    }
+    // Calculate the target's radius.
+    const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
+    // Random position adjusted for the margin and size increase.
+    const x = Math.random() * (window.innerWidth - targetRadius * 2) + targetRadius;
+    const y = Math.random() * (window.innerHeight - targetRadius * 2) + targetRadius;
+    // Return the calculated position.
+    return { x, y };
+  };
 
   // target positions
-  const [targetPositions, setTargetPositions] = useState(Array(1).fill().map(() => ({ x: 0, y: 0 })));
-  const [ghostTargets, setGhostTargets] = useState([]);
+  const [targetList, setTargetList] = useState([Array(1).fill().map(() => { return { position: { x: 0, y: 0 }, isRare: false }; })]);
+  // generate a target
+  const generateTarget = ({ canBeRare = false } = {}) => {
+    let position = generatePosition();
+    let isRare = canBeRare && Math.random() < 0.5;
+    return {
+      position,
+      isRare
+    };
+  };
+  // regenerate position for a single target
+  const regenerateTarget = (targetIndex) => {
+    setTargetList(prevTargetList =>
+      prevTargetList.map((obj, index) => index === targetIndex ? generateTarget({ canBeRare: true }) : obj)
+    );
+  };
+  // Function to add a new target
+  const addTarget = () => {
+    setTargetList(prevTargetList => [...prevTargetList, generateTarget()]);
+  };
+  const removeTarget = () => {
+    if (targetList.length > 1) { // Ensure at least one target remains
+      setTargetList(targetList.slice(0, -1));
+    }
+  };
+  // target component
+  const target = (targetList, targetIndex) => {
+    const isRare = targetList[targetIndex].isRare;
+    const { x, y } = targetList[targetIndex].position;
+    const targetSize = baseTargetSize * targetSizeMultiplier;
+    // render target component based on rarity
+    if (isRare) { // rare targets
+      return (
+        <div
+          key={targetIndex}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onTargetHit(targetIndex, e);
+            e.stopPropagation();
+          }}
+          className="animate-prismatic bg-prismatic absolute flex justify-center items-center rounded-full border-[3px] border-black"
+          style={{
+            left: `${x - targetSize / 2}px`,
+            top: `${y - targetSize / 2}px`,
+            width: `${targetSize}px`,
+            height: `${targetSize}px`,
+          }}
+        />
+      );
+    } else { // regular targets
+      return (
+        <div
+          key={targetIndex}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onTargetHit(targetIndex, e);
+            e.stopPropagation();
+          }}
+          className="absolute flex justify-center items-center rounded-full bg-[#3b82f6] border-[3px] border-black opacity-90"
+          style={{
+            left: `${x - targetSize / 2}px`,
+            top: `${y - targetSize / 2}px`,
+            width: `${targetSize}px`,
+            height: `${targetSize}px`,
+          }}
+        >
+          {/* 3x area */}
+          <div className="absolute rounded-full bg-[#F89414] border-[3px] border-black" style={{ width: `${targetSize * 0.6}px`, height: `${targetSize * 0.6}px` }}></div>
+          {/* 5x area */}
+          <div className="absolute rounded-full bg-[#e53935] border-[3px] border-black" style={{ width: `${targetSize * 0.25}px`, height: `${targetSize * 0.25}px` }}></div>
+        </div>
+      );
+    }
+  };
+  // Generate initial target list
+  useEffect(() => {
+    if (isMobile) return;
+    setTargetList(targetList.map(() => generateTarget()));
+  }, []);
   // Ref for target positions
-  const targetPositionsRef = useRef(targetPositions);
+  const targetListRef = useRef(targetList);
   // Update the ref when the state changes
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
-    targetPositionsRef.current = targetPositions;
-  }, [targetPositions]);
-  //  target hit interval in milliseconds
-  const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
-
-  // Bot position state
-  const [botPositions, setBotPositions] = useState(() => Array(0).fill().map(() => ({ x: 0, y: 0 })));
+    if (isMobile) return;
+    targetListRef.current = targetList;
+  }, [targetList]);
 
   // target hit counter
   const [Score, setScore] = useState(0);
@@ -320,8 +385,6 @@ export default function AimTrainer() {
   const [hitPopups, setHitPopups] = useState([]);
 
 
-
-
   // number of shields 🛡
   const [maxShield, setMaxShield] = useState(1);
   const [currentShield, setCurrentShield] = useState(0);
@@ -329,7 +392,7 @@ export default function AimTrainer() {
   const [shieldRegenMultiplier, setShieldRegenMultiplier] = useState(1);
   // Shield regeneration logic
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     if (maxShield > 0 && currentShield < maxShield) {
       const intervalId = setInterval(() => {
         setCurrentShield(prevShield => Math.min(maxShield, prevShield + 1));
@@ -339,7 +402,7 @@ export default function AimTrainer() {
   }, [currentShield, maxShield, shieldRegenRate, shieldRegenMultiplier]);
   // whenever max shield is increased, set current shield to max shield
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     // Only increase currentShield if it is less than the new maxShield
     if (currentShield < maxShield) {
       setCurrentShield(maxShield);
@@ -361,7 +424,7 @@ export default function AimTrainer() {
   const [nextAffordableItemId, setNextAffordableItemId] = useState(null);
   // get the next affordable item
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     // Filter unowned and unaffordable items
     const unownedItems = storeItems.filter(item => item.owned === 0 && Coin < calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
 
@@ -379,7 +442,7 @@ export default function AimTrainer() {
   const [canAfford, setCanAfford] = useState(false);
   // Update canAfford state whenever Coins or storeItems change
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     const affordable = storeItems.some(item => Coin >= calculateCurrentItemCost(item.baseCost, item.growthRate, item.owned));
     setCanAfford(affordable);
   }, [Coin, storeItems, isMobile]);
@@ -566,80 +629,9 @@ export default function AimTrainer() {
   };
 
 
-
-
-  // Function to add a new target
-  const addTarget = () => {
-    setTargetPositions(prevPositions => [...prevPositions, generateTargetPosition()]);
-  };
-  const removeTarget = () => {
-    if (targetPositions.length > 1) { // Ensure at least one target remains
-      setTargetPositions(targetPositions.slice(0, -1));
-    }
-  };
-
-  // Function to generate a random position on the screen
-  const generatePosition = () => {
-    if (typeof window === 'undefined') {
-      return { x: 0, y: 0 }; // Return default position or handle as needed for SSR
-    }
-    // Calculate the target's radius.
-    const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
-
-    // Random position adjusted for the margin and size increase.
-    const x = Math.random() * (window.innerWidth - targetRadius * 2) + targetRadius;
-    const y = Math.random() * (window.innerHeight - targetRadius * 2) + targetRadius;
-
-    // Return the calculated position.
-    return { x, y };
-  };
-
-  // New function for generating non-overlapping target positions
-  const generateTargetPosition = () => {
-    let newPosition = generatePosition();
-    return newPosition;
-  };
-  // regenerate position for a single target
-  const regenerateTargetPosition = (targetID) => {
-    setTargetPositions(prevPositions =>
-      prevPositions.map((pos, index) => index === targetID ? generateTargetPosition() : pos)
-    );
-  };
-
-  // target component
-  const target = (targetPosition, targetID) => {
-    const targetSize = baseTargetSize * targetSizeMultiplier;
-    return (
-      <div
-        key={targetID}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          onTargetHit(targetID, e);
-          e.stopPropagation();
-        }}
-        className="absolute flex justify-center items-center rounded-full bg-[#3b82f6] border-[3px] border-black opacity-90"
-        style={{
-          left: `${targetPosition.x - targetSize / 2}px`,
-          top: `${targetPosition.y - targetSize / 2}px`,
-          width: `${targetSize}px`,
-          height: `${targetSize}px`,
-        }}
-      >
-        {/* target middle x3 */}
-        <div className="absolute rounded-full bg-[#F89414] border-[3px] border-black" style={{ width: `${targetSize * 0.6}px`, height: `${targetSize * 0.6}px` }}></div>
-        {/* target center x10 */}
-        <div className="absolute rounded-full bg-[#e53935] border-[3px] border-black" style={{ width: `${targetSize * 0.25}px`, height: `${targetSize * 0.25}px` }}></div>
-      </div>
-    );
-  };
-
-
-
-
-
   // Coin combo multiplier decrease (variable rate)
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     let intervalId;
     if (!isGamePaused) {
       intervalId = setInterval(() => {
@@ -656,9 +648,7 @@ export default function AimTrainer() {
         clearInterval(intervalId);
       }
     };
-  }, [comboDecreaseRate, maxComboLimit, isGamePaused, isMobile]); //dependencies
-
-
+  }, [comboDecreaseRate, maxComboLimit, isGamePaused, isMobile]);
 
 
 
@@ -666,7 +656,7 @@ export default function AimTrainer() {
   const hitSoundRef = useRef(null);
   // Preload the hit sound on game load
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     // Preload the hit sound and store it in the ref
     hitSoundRef.current = new Audio('/hitbubble.mp3');
     hitSoundRef.current.load();
@@ -681,7 +671,7 @@ export default function AimTrainer() {
   };
 
   // trigger the popup on target hit/miss
-  const showPopup = (x, y, type, amount = null, hitArea = null) => {
+  const showPopup = (x, y, type, amount = null, hitType = null) => {
     // Calculate adjustment towards center for the popup
     const adjustmentX = x < window.innerWidth / 2 ? 100 : -100;
     const adjustmentY = y < window.innerHeight / 2 ? 50 : -50;
@@ -704,11 +694,11 @@ export default function AimTrainer() {
 
     // Determine the color based on hit area
     let popupColor = '#000'; // Default to black
-    if (hitArea === 'center') {
+    if (hitType === 'center') {
       popupColor = '#e53935'; // Red for center
-    } else if (hitArea === 'middle') {
+    } else if (hitType === 'middle') {
       popupColor = '#F89414'; // Yellow for middle
-    } else if (hitArea === 'outer') {
+    } else if (hitType === 'outer') {
       popupColor = '#3b82f6'; // Blue for outer
     }
 
@@ -733,7 +723,8 @@ export default function AimTrainer() {
     }, removalDelay);
   };
 
-
+  //  target hit interval in milliseconds
+  const [lastTargetHitTimestamp, setLastTargetHitTimestamp] = useState(0);
   // Base Coin reward bonus function based on time elapsed since last target hit
   const calculateIntervalSpeedCoinBonus = (timeDifference) => {
     // Cap the minimum time difference at 50ms
@@ -750,7 +741,6 @@ export default function AimTrainer() {
     // Return the baseCoinReward as the minimum reward or the calculated potential reward
     return Math.max(potentialReward, baseCoinReward);
   };
-
   // Coin reward per target hit
   const targetHitCoinReward = () => {
     const currentTime = Date.now();
@@ -763,49 +753,54 @@ export default function AimTrainer() {
   };
 
   // when u hit a target
-  const onTargetHit = (targetID, event) => {
+  const onTargetHit = (targetIndex, event) => {
+    const target = targetList[targetIndex];
+    const isRare = target.isRare;
     // Play the hit sound
     playHitSound();
     // Increase the target hit counter
     setScore(prevCount => prevCount + 1);
-    // Get the target's center position before removing it
-    const targetCenterX = targetPositions[targetID].x;
-    const targetCenterY = targetPositions[targetID].y;
-    // Remove the target and add a new one
-    regenerateTargetPosition(targetID);
-    // Get the click position (or bot hit position)
-    const clickX = event.clientX;
-    const clickY = event.clientY;
-    // Calculate the distance between the click and the target's center
-    const distance = Math.sqrt((clickX - targetCenterX) ** 2 + (clickY - targetCenterY) ** 2);
-    // Calculate the target size based on the multiplier
-    const targetSize = baseTargetSize * targetSizeMultiplier;
-    const middleRadius = targetSize * 0.3; // 30% of the target size for middle part
-    const centerRadius = targetSize * 0.125; // 12.5% of the target size for center part
-
-    let hitAreaRewardMultiplier = 1; // Base reward multiplier
-    let hitArea = 'outer'; // Default to outer area
-    // identify which part of target was hit
-    if (distance <= centerRadius) {
-      hitAreaRewardMultiplier = 5; // Center part hit
-      hitArea = 'center';
-    } else if (distance <= middleRadius) {
-      hitAreaRewardMultiplier = 3; // Middle part hit
-      hitArea = 'middle';
+    // Get the target's center position
+    const targetCenterX = target.position.x;
+    const targetCenterY = target.position.y;
+    regenerateTarget(targetIndex); // Remove the target and add a new one
+    let hitTypeRewardMultiplier = 1; // Base reward multiplier
+    let hitType = 'outer'; // Default to outer area
+    // determine reward multiplier and hit type
+    if (isRare) { //rare targets
+      hitTypeRewardMultiplier = 100;
+      hitType = 'rare';
+    } else {  // determine reward multiplier based on hit area for regular targets
+      // Get the click position (or bot hit position)
+      const clickX = event.clientX;
+      const clickY = event.clientY;
+      // Calculate the distance between the click and the target's center
+      const distance = Math.sqrt((clickX - targetCenterX) ** 2 + (clickY - targetCenterY) ** 2);
+      // Calculate the target size based on the multiplier
+      const targetSize = baseTargetSize * targetSizeMultiplier;
+      const middleRadius = targetSize * 0.3; // 30% of the target size for middle part
+      const centerRadius = targetSize * 0.125; // 12.5% of the target size for center part
+      // apply reward multipliers based on hit area
+      if (distance <= centerRadius) {
+        hitTypeRewardMultiplier = 5; // Center part hit
+        hitType = 'center';
+      } else if (distance <= middleRadius) {
+        hitTypeRewardMultiplier = 3; // Middle part hit
+        hitType = 'middle';
+      }
     }
-
     // Calculate the final Coin earned based on multipliers
-    const finalCoinEarned = targetHitCoinReward() * hitAreaRewardMultiplier;
+    const finalCoinEarned = targetHitCoinReward() * hitTypeRewardMultiplier;
     // Update Coin state with the final amount earned
     setCoin((prevCoin) => prevCoin + finalCoinEarned);
     // increase xp by 1 * multipliers
-    const XPGained = baseXPGainPerHit * Math.max(1, combo) * xpGainMultiplier * hitAreaRewardMultiplier;
+    const XPGained = baseXPGainPerHit * Math.max(1, combo) * xpGainMultiplier * hitTypeRewardMultiplier;
     // Add the XP and check for Level up
     addXPAndCheckLevelUp(XPGained);
     // Increase combo multiplier by 1% * multipliers
-    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.01 * maxComboLimit * comboIncreaseMultiplier * hitAreaRewardMultiplier));
+    setCombo(prevCombo => Math.min(maxComboLimit, prevCombo + 0.01 * maxComboLimit * comboIncreaseMultiplier * hitTypeRewardMultiplier));
     // Show the Coin gain popup
-    showPopup(event.clientX, event.clientY, 'gain', finalCoinEarned, hitArea);
+    showPopup(event.clientX, event.clientY, 'gain', finalCoinEarned, hitType);
   };
   // target miss penalty
   const onTargetMiss = (event) => {
@@ -833,13 +828,11 @@ export default function AimTrainer() {
 
 
 
-
   // get current cost of an item depending on how many owned
   const calculateCurrentItemCost = (baseCost, growthRate, owned) => {
     // Polynomial growth
     return parseFloat(baseCost * Math.pow(1 + (growthRate * owned), 1 + owned * 0.01)) * itemCostReductionMultiplier;
   };
-
   // Function to apply the effects of a purchased item
   const applyPurchasedItem = (itemBuff) => {
     switch (itemBuff) {
@@ -895,82 +888,116 @@ export default function AimTrainer() {
 
 
 
-  const [moveDelayPerBot, setMoveDelayPerBot] = useState(500); // base delay between each bot's move
-  const [botsInitialized, setBotsInitialized] = useState(false);
+  // Bot position state
+  const [botList, setBotList] = useState([]);
+  // Ref for bot timers
+  const botListRef = useRef(botList);
+  // Effect to mirror botList to botListRef
+  useEffect(() => {
+    botListRef.current = botList.map(bot => ({
+      ...bot,
+      moveTimer: bot.moveTimer || null,
+      animationTimer: bot.animationTimer || null
+    }));
+  }, [botList]);
+  // ghost targets to protect player from target misses after bot hits
+  const [ghostTargets, setGhostTargets] = useState([]);
+  // base delay between each bot hit
+  const [botMoveDelay, setBotMoveDelay] = useState(1000);
   // Function to add new bots ⵙ
   const addBot = (botAmount = 1) => {
-    setBotPositions(prevPositions => [...prevPositions, ...Array(botAmount).fill().map(() => generatePosition())]);
-    setBotsInitialized(true);
+    const newBots = Array(botAmount).fill().map(() => ({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      position: generatePosition(),
+      moveTimer: null,
+      animationTimer: null
+    }));
+    setBotList(prevBotList => [...prevBotList, ...newBots]);
   };
-  // check if bot overlaps target
-  const doesBotOverlapTarget = (botPos, targetPos) => {
-    // get the target radius
-    const targetRadius = (baseTargetSize * targetSizeMultiplier) / 2;
-
-    // Reduce the effective target radius by 1px for the bot's advantage
-    const effectiveTargetRadius = targetRadius - 1;
-
-    // Calculate the distance between the bot and the target
-    const distanceX = botPos.x - targetPos.x;
-    const distanceY = botPos.y - targetPos.y;
-    const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-
-    // Check if the distance is less than the effective target radius (with 1px advantage)
-    return distance <= effectiveTargetRadius;
+  const scheduleNextMove = (botIndex) => {
+    const randomDelayDelta = 200;
+    const delay = botMoveDelay + Math.random() * randomDelayDelta - randomDelayDelta / 2;
+    botListRef.current[botIndex].moveTimer = setTimeout(() => moveBotToTarget(botIndex), delay);
   };
-  // trigger a hit when bot overlaps target
-  const checkForBotHit = (botPos) => {
-    for (let targetIndex = targetPositionsRef.current.length - 1; targetIndex >= 0; targetIndex--) {
-      const targetPos = targetPositionsRef.current[targetIndex];
-      if (doesBotOverlapTarget(botPos, targetPos)) {
-        onTargetHit(targetIndex, { clientX: botPos.x, clientY: botPos.y });
-        // ghost target to prevent player from missing the target
-        setGhostTargets(prevTargets => [...prevTargets, { ...targetPos, timestamp: Date.now() }]);
-        break;
-      }
+  // check if a bot is on a target
+  const checkForHit = (botIndex, targetIndex) => {
+    const botPosition = botListRef.current[botIndex].position;
+    const target = targetListRef.current[targetIndex];
+    const targetRadius = baseTargetSize * targetSizeMultiplier / 2;
+    const distanceFromCenter = Math.sqrt((botPosition.x - target.position.x) ** 2 + (botPosition.y - target.position.y) ** 2);
+
+    // Check if the bot is within the target area
+    if (distanceFromCenter <= targetRadius) {
+      // Hit the target at bot location
+      onTargetHit(targetIndex, { clientX: botPosition.x, clientY: botPosition.y });
+    } else {
+      console.log(`Bot ${botIndex} missed: Distance ${distanceFromCenter}, Target Radius ${targetRadius}`);
     }
+    scheduleNextMove(botIndex);
   };
-  // move a bot to a new position then check for target hit
-  const moveBotAndCheckHit = (botIndex) => {
-    // Generate a new position for the bot
-    const newPosition = generatePosition();
-    // Update the position of the specific bot
-    setBotPositions(prevBotPositions =>
-      prevBotPositions.map((pos, index) => index === botIndex ? newPosition : pos)
+  //move bot to a given target
+  const moveBotToTarget = (botIndex) => {
+    const targetIndex = Math.floor(Math.random() * targetListRef.current.length); // Pick a random target
+    const target = targetListRef.current[targetIndex];
+    const targetRadius = baseTargetSize * targetSizeMultiplier / 2;
+
+    // Calculate a random position within the expanded target area
+    const angle = Math.random() * 2 * Math.PI;
+    const radius = targetRadius * Math.sqrt(Math.random());
+    const x = target.position.x + radius * Math.cos(angle);
+    const y = target.position.y + radius * Math.sin(angle);
+
+    // Update the bot position in state
+    setBotList(prevBotList =>
+      prevBotList.map((bot, index) => index === botIndex ? { ...bot, position: { x, y } } : bot)
     );
-    // Delay the hit check to occur after the bot movement animation completes
-    setTimeout(() => {
-      checkForBotHit(newPosition);
-    }, 250 + 50); // Match the duration of the CSS transition + click delay
-  };
-  // move every bot and check for hit sequentially
-  const moveBotsSequentially = () => {
-    botPositions.forEach((_, index) => {
-      setTimeout(() => {
-        moveBotAndCheckHit(index);
-      }, index * moveDelayPerBot / botSpeedMultiplier); // Delay between each bot move
-    });
-  };
-  // Move bots sequentially at interval
-  useEffect(() => {
-    if (isMobile) return; // ignore on mobile
-    if (!isGamePaused && botPositions.length > 0 && botsInitialized) {
 
-      moveBotsSequentially();
-
-      // calculate total time for 1 full sequence 
-      const totalSequenceTime = botPositions.length * moveDelayPerBot / botSpeedMultiplier;
-      const intervalId = setInterval(() => {
-        moveBotsSequentially();
-      }, totalSequenceTime + moveDelayPerBot / botSpeedMultiplier); // delay between each sequence
-      return () => clearInterval(intervalId);
+    // Clear previous animation timer if it exists
+    if (botListRef.current[botIndex].animationTimer) {
+      clearTimeout(botListRef.current[botIndex].animationTimer);
+      botListRef.current[botIndex].animationTimer = null;
     }
-  }, [botSpeedMultiplier, isGamePaused, moveDelayPerBot, botsInitialized, isMobile]); //dependencies
+
+    // Schedule the check for hit after a delay to simulate movement
+    botListRef.current[botIndex].animationTimer = setTimeout(() => {
+      if (!isLoading && !isGamePaused) { // Double-check state before proceeding
+        checkForHit(botIndex, targetIndex);
+      }
+    }, 250);
+  };
+  // start bot movement on game start
+  useEffect(() => {
+    if (isMobile || isGamePaused) return;
+
+    const startBots = () => {
+      botListRef.current.forEach((bot, index) => {
+        if (!bot.moveTimer) {
+          scheduleNextMove(index);
+        }
+      });
+    };
+
+    const stopBots = () => {
+      botListRef.current.forEach(bot => {
+        if (bot.moveTimer) {
+          clearTimeout(bot.moveTimer);
+          bot.moveTimer = null;
+        }
+        if (bot.animationTimer) {
+          clearTimeout(bot.animationTimer);
+          bot.animationTimer = null;
+        }
+      });
+    };
+
+    startBots();
+    return () => stopBots();
+  }, [isMobile, isLoading, isGamePaused]);
 
 
   // Remove ghost targets after a certain time
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     const interval = setInterval(() => {
       const now = Date.now();
       setGhostTargets(prevTargets => prevTargets.filter(target => now - target.timestamp < 500));
@@ -980,18 +1007,9 @@ export default function AimTrainer() {
   }, [ghostTargets, isMobile]);
 
 
-
-  // Generate initial target positions
-  useEffect(() => {
-    if (isMobile) return; // ignore on mobile
-    setTargetPositions(targetPositions.map(() => generateTargetPosition()));
-  }, []);
-
-
-
   // Add event listeners for space bar to open shop and tab to open leaderboard
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     let shopTimer = null;
     let leaderboardTimer = null;
     let shopToggleMode = true;
@@ -1058,13 +1076,12 @@ export default function AimTrainer() {
   }, [isMobile]);
   // Event listener for Esc key to toggle menu overlay
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     const toggleMenu = (event) => {
       if (event.key === "Escape") {
         setIsMenuOpen(prevState => !prevState);
       }
     };
-
     window.addEventListener('keydown', toggleMenu);
 
     return () => {
@@ -1146,7 +1163,7 @@ export default function AimTrainer() {
   };
   // Call the updateComboBarColor function when the component mounts
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     // Start the animation loop
     const animationFrameId = requestAnimationFrame(updateComboBarColor);
 
@@ -1167,7 +1184,7 @@ export default function AimTrainer() {
   const playerNameRef = useRef(playerName);
   // Update the ref when the state changes
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     scoreRef.current = Score;
     coinRef.current = Coin;
     xpRef.current = playerProgress.currentXP;
@@ -1180,7 +1197,7 @@ export default function AimTrainer() {
   }, [Score, Coin, playerProgress, storeItems, levelUpUpgrades, volume, isShopIndicatorOn, playerName, isMobile]);
   //local storage auto save in real time
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     if (!isLoading) {
       const gameData = {
         score: scoreRef.current,
@@ -1216,7 +1233,7 @@ export default function AimTrainer() {
   };
   //auto save game data on interval to firestore
   useEffect(() => {
-    if (isMobile) return; // ignore on mobile
+    if (isMobile) return;
     const autosaveAction = () => {
       // Fetch the latest game data from Local Storage
       const gameDataString = localStorage.getItem('gameData');
@@ -1236,40 +1253,34 @@ export default function AimTrainer() {
 
 
   // Mobile decorative targets
-  const [backgroundTargets, setBackgroundTargets] = useState(Array(12).fill().map(() => generatePosition()));
+  const [backgroundTargets, setBackgroundTargets] = useState(
+    Array(8).fill().map(() => ({ position: generatePosition() }))
+  );
   // Generate decorative target positions
   useEffect(() => {
     if (!isMobile) return; // Ensure this runs only on mobile
-    let lastTargetIndex = null; // Variable to store the last updated target index
+    let lastTargetIndex = -1; // Initialize to an invalid index to ensure the first iteration always generates a position
+
     const regeneratePosition = () => {
       let currentTargetIndex;
       do {
-        // pick random target index
-        currentTargetIndex = Math.floor(Math.random() * 12);
-      } while (currentTargetIndex === lastTargetIndex); // Repeat if it's the same as the last index
+        currentTargetIndex = Math.floor(Math.random() * backgroundTargets.length);
+      } while (currentTargetIndex === lastTargetIndex); // Avoid regenerating the same target consecutively
+
       setBackgroundTargets(currentTargets =>
         currentTargets.map((target, index) =>
-          index === currentTargetIndex ? generatePosition() : target
+          index === currentTargetIndex ? { ...target, position: generatePosition() } : target
         )
       );
-      // Update lastTargetIndex to the newly regenerated index
+
       lastTargetIndex = currentTargetIndex;
-      // Generate a random interval between 180ms and 360ms
-      const nextTimeout = Math.floor(Math.random() * (360 - 180 + 1) + 180);
-      // Call regeneratePosition again after the random interval
+      const nextTimeout = Math.floor(Math.random() * (200 - 80) + 80);
       setTimeout(regeneratePosition, nextTimeout);
     };
-    // Start the recursive timeout loop
+
     regeneratePosition();
-    // Cleanup function to clear timeout when the component unmounts or isMobile changes
-    return () => {
-      if (regeneratePosition) {
-        clearTimeout(regeneratePosition);
-      }
-    };
+    return () => clearTimeout(regeneratePosition);
   }, [isMobile]);
-
-
 
   // loading screen
   if (isLoading) {
@@ -1293,7 +1304,7 @@ export default function AimTrainer() {
     return (
       <div className="h-screen w-screen overflow-hidden pointer-events-none">
         <div className="">
-          {backgroundTargets.map((pos, index) => (target(pos, index)))}
+          {backgroundTargets.map((_, index) => target(backgroundTargets, index))}
         </div>
         <div className='animate-playondesktopflash absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center'>
           <div className="text-5xl leading-none text-center">
@@ -1306,7 +1317,6 @@ export default function AimTrainer() {
       </div>
     );
   }
-
   // Main game
   return (
     <main className="h-screen w-screen bg-cover bg-center">
@@ -1341,11 +1351,10 @@ export default function AimTrainer() {
           e.stopPropagation();
         }}
       >
-
         {/* Ghost target instances */}
-        {ghostTargets.map((ghostTarget, ghostTargetID) => (
+        {ghostTargets.map((ghostTarget, ghosttargetIndex) => (
           <div
-            key={ghostTargetID}
+            key={ghosttargetIndex}
             className="absolute rounded-full"
             style={{
               left: `${ghostTarget.x - (baseTargetSize * targetSizeMultiplier / 2)}px`,
@@ -1357,16 +1366,16 @@ export default function AimTrainer() {
         ))}
 
         {/* target instances */}
-        {targetPositions.map((targetPosition, targetID) => target(targetPosition, targetID))}
+        {targetList.map((_, targetIndex) => target(targetList, targetIndex))}
 
         {/* bot instances */}
-        {botPositions.map((botPosition, botID) => (
+        {botList.map((_, botIndex) => (
           <div
-            key={botID}
+            key={botIndex}
             className="absolute pointer-events-none"
             style={{
-              left: `${botPosition.x - 16}px`,
-              top: `${botPosition.y - 16}px`,
+              left: `${botList[botIndex].position.x - 16}px`,
+              top: `${botList[botIndex].position.y - 16}px`,
               transition: 'left 250ms ease-out, top 250ms ease-out',
             }}
           >

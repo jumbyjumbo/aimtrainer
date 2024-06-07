@@ -2,7 +2,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "aimtrainer",
-  description: "aimtrainer clicker",
+  description: "ⵙ",
 };
 
 export default function RootLayout({ children }) {
