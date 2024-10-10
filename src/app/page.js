@@ -668,7 +668,7 @@ export default function AimTrainer() {
   useEffect(() => {
     if (isMobile) return; // ignore on mobile
     // Preload the hit sound and store it in the ref
-    hitSoundRef.current = new Audio('/hitbubble.mp3');
+    hitSoundRef.current = new Audio('/bopblue.mp3');
     hitSoundRef.current.load();
   }, [isMobile]);
   // Function to play the hit sound
@@ -1467,10 +1467,10 @@ export default function AimTrainer() {
 
       {/* TAB leaderboard */}
       {showLeaderboard && (
-        <div className={` backdrop-blur-xl absolute left-0 top-0 w-screen h-screen flex justify-center items-center border-r-[3px] border-black  ${isLeaderboardOpen ? 'animate-slideRight' : 'animate-slideLeft'}`}>
+        <div className={` backdrop-blur-xl absolute left-0 top-0 w-screen h-screen flex justify-center items-center  ${isLeaderboardOpen ? 'animate-slideRight' : 'animate-slideLeft'}`}>
           {playerName === "ANONYMOUS" ? (
             <div>
-              <div className="text-7xl pb-4">choose a name</div>
+              <div className="text-7xl pb-4 text-center">choose a name</div>
               <input
                 onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
                 type="text"
