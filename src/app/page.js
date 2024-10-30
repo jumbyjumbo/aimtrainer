@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from "firebase/app";
 //db
-import { getFirestore, doc, setDoc, getDoc, getDocs, updateDoc, query, collection, where, limit, orderBy, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, getDocs, updateDoc, query, collection, where, limit, orderBy, onSnapshot, deleteDoc } from 'firebase/firestore';
 //auth
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 
@@ -25,8 +25,6 @@ const auth = getAuth(app);
 
 
 
-
-
 // main component (full app)
 export default function AimTrainer() {
 
@@ -41,6 +39,24 @@ export default function AimTrainer() {
       const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
       setIsMobile(mobile);
     }
+  }, []);
+
+  //check screen size / enforce large screen
+  const [isScreenTooSmall, setIsScreenTooSmall] = useState(false);
+  const minScreenWidth = 1200;
+  const minScreenHeight = 850;
+  const checkScreenSize = () => {
+    if (window.innerWidth < minScreenWidth || window.innerHeight < minScreenHeight) {
+      setIsScreenTooSmall(true);
+    } else {
+      setIsScreenTooSmall(false);
+    }
+  };
+  useEffect(() => {
+    checkScreenSize(); // Check size on initial render
+    // Re-check size on window resize
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize); // Cleanup
   }, []);
 
 
@@ -226,8 +242,6 @@ export default function AimTrainer() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   //render leaderboard
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  // leaderboard loading state
-  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
   // leaderboard data state
   const [leaderboardData, setLeaderboardData] = useState([]);
 
@@ -449,7 +463,7 @@ export default function AimTrainer() {
 
   // Level-Up Upgrades [common, rare, legendary] ⵙ ₿ speed reward shield
   const [levelUpUpgrades, setLevelUpUpgrades] = useState([
-    { id: 'bot', owned: [0, 0, 0] },
+    //{ id: 'bot', owned: [0, 0, 0] },
     { id: 'coin_bonus', owned: [0, 0, 0] },
     { id: 'speed_bonus', owned: [0, 0, 0] },
     { id: 'shield', owned: [0, 0, 0] },
@@ -474,11 +488,11 @@ export default function AimTrainer() {
   };
   // what each level up upgrade actually does
   const levelupUpgradeEffects = {
-    bot: {
-      common: () => addBot(1),
-      rare: () => addBot(2),
-      legendary: () => addBot(3),
-    },
+    // bot: {
+    //   common: () => addBot(1),
+    //   rare: () => addBot(2),
+    //   legendary: () => addBot(3),
+    // },
     coin_bonus: {
       common: () => setCoinLevelMultiplier(prev => prev + 0.1),
       rare: () => setCoinLevelMultiplier(prev => prev + 0.2),
@@ -660,15 +674,13 @@ export default function AimTrainer() {
 
 
 
-
-
   // Sound effect for target hit
   const hitSoundRef = useRef(null);
   // Preload the hit sound on game load
   useEffect(() => {
     if (isMobile) return; // ignore on mobile
     // Preload the hit sound and store it in the ref
-    hitSoundRef.current = new Audio('/bopblue.mp3');
+    hitSoundRef.current = new Audio('/hit.mp3');
     hitSoundRef.current.load();
   }, [isMobile]);
   // Function to play the hit sound
@@ -1214,24 +1226,96 @@ export default function AimTrainer() {
       }
     }
   };
+
+
+  const lastSavedDataRef = useRef(null);
   //auto save game data on interval to firestore
   useEffect(() => {
     if (isMobile) return; // ignore on mobile
-    const autosaveAction = () => {
-      // Fetch the latest game data from Local Storage
-      const gameDataString = localStorage.getItem('gameData');
-      const gameData = JSON.parse(gameDataString);
-      // Check if gameData is not null
-      if (gameData) {
-        // Autosave the game data to Firestore
-        autosaveGame(gameData)
-          .then(() => console.log('Autosaved game data to Firestore at', new Date().toLocaleTimeString()))
-          .catch(error => console.error('Error autosaving game data to Firestore:', error));
+    const initialGameData = localStorage.getItem('gameData');
+    lastSavedDataRef.current = initialGameData;
+
+    //check for cheating
+    const isPlayerCheating = (currentData, lastData) => {
+      const maxScoreIncreasePerMinute = 500;
+      const scoreIncrease = currentData.score - lastData.score;
+
+      if (scoreIncrease > maxScoreIncreasePerMinute) {
+        return true; // Cheating detected
+      }
+      return false; // No cheating detected
+    };
+    //destroy cheaters data
+    const resetPlayerData = async () => {
+      if (auth.currentUser) {
+        const userId = auth.currentUser.uid;
+        // Delete user data from Firestore
+        const docRef = doc(db, 'players', userId);
+        try {
+          await deleteDoc(docRef);
+          console.log('Deleted user data from Firestore for user', userId);
+        } catch (error) {
+          console.error('Error deleting user data from Firestore:', error);
+        }
+        // Clear local storage
+        localStorage.clear();
+        // Reload the page to reset the game
+        window.location.reload();
       }
     };
-    const autosaveInterval = setInterval(autosaveAction, 1000 * 60 * 10); // 10 minute interval
+    const autosaveAction = () => {
+      const gameDataString = localStorage.getItem('gameData');
+      const gameData = JSON.parse(gameDataString);
+
+      if (gameData) {
+        const currentTime = Date.now();
+
+        if (lastSavedDataRef.current) {
+          const isCheating = isPlayerCheating(gameData, lastSavedDataRef.current);
+          if (isCheating) {
+            resetPlayerData();
+          } else {
+            // Proceed with autosave if data has changed
+            if (
+              JSON.stringify(gameData) !== JSON.stringify(lastSavedDataRef.current)
+            ) {
+              autosaveGame(gameData)
+                .then(() => {
+                  console.log(
+                    'Autosaved game data to Firestore at',
+                    new Date().toLocaleTimeString()
+                  );
+                  lastSavedDataRef.current = gameData;
+                })
+                .catch((error) =>
+                  console.error('Error autosaving game data to Firestore:', error)
+                );
+            }
+          }
+        } else {
+          // First-time save
+          autosaveGame(gameData)
+            .then(() => {
+              console.log(
+                'Autosaved game data to Firestore at',
+                new Date().toLocaleTimeString()
+              );
+              lastSavedDataRef.current = gameData;
+              lastSavedTimeRef.current = currentTime;
+            })
+            .catch((error) =>
+              console.error('Error autosaving game data to Firestore:', error)
+            );
+        }
+      }
+    };
+
+    const autosaveInterval = setInterval(autosaveAction, 1000 * 60); // 1min
     return () => clearInterval(autosaveInterval);
   }, [isMobile]);
+
+
+
 
 
 
@@ -1268,6 +1352,25 @@ export default function AimTrainer() {
       }
     };
   }, [isMobile]);
+  // Mobile warning screen
+  if (isMobile) {
+    return (
+      <div className="h-screen w-screen overflow-hidden pointer-events-none">
+        <div className="">
+          {backgroundTargets.map((pos, index) => (target(pos, index)))}
+        </div>
+        <div className='animate-playondesktopflash absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center'>
+          <div className="text-5xl leading-none text-center">
+            mobile not supported
+          </div>
+          <div className="text-3xl leading-none text-center ">
+            play on desktop
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
 
 
@@ -1288,25 +1391,23 @@ export default function AimTrainer() {
       </div>
     );
   }
-  // Mobile warning screen
-  if (isMobile) {
+  // enforce min screen size
+  if (isScreenTooSmall) {
     return (
-      <div className="h-screen w-screen overflow-hidden pointer-events-none">
-        <div className="">
-          {backgroundTargets.map((pos, index) => (target(pos, index)))}
-        </div>
-        <div className='animate-playondesktopflash absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center'>
-          <div className="text-5xl leading-none text-center">
-            mobile not supported
-          </div>
-          <div className="text-3xl leading-none text-center ">
-            play on desktop
+      <div className="h-screen w-screen overflow-hidden ">
+        <div className='absolute top-0 left-0 z-30 h-full w-full flex flex-col justify-center items-center'>
+          {/* game title */}
+          < div className="text-6xl lg:text-[20vh] leading-none text-center" >
+            aim trainer
+          </div >
+          {/* warning */}
+          <div className="text-3xl lg:text-[5vh] leading-none" >
+            screen too small
           </div>
         </div>
       </div>
     );
   }
-
   // Main game
   return (
     <main className="h-screen w-screen bg-cover bg-center">
