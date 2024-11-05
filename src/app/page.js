@@ -1617,13 +1617,20 @@ export default function AimTrainer() {
       {/* ESC menu overlay */}
       {isMenuOpen && (
         <div className="absolute backdrop-blur-2xl w-screen h-screen">
-          <div className='pt-8 absolute w-full text-9xl flex justify-center items-center' >aimtrainer</div>
+          {/* Aimtrainer title at the top */}
+          <div className='pt-8 absolute w-full text-9xl flex justify-center items-center'>
+            aimtrainer
+          </div>
+
+          {/* Centered settings options */}
           <div className='w-full h-full flex flex-col justify-center gap-12 items-center'>
-            {/* sound control */}
-            <div className='flex flex-row justify-center items-center' >
+            {/* Sound control */}
+            <div className='flex flex-row justify-center items-center'>
               <img src="/volume.png" alt="volume icon" style={{ width: '5vh', height: '5vh' }} />
               <div className='w-[2vw]'></div>
-              <input style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }} className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
+              <input
+                style={{ backgroundSize: `${volume * 100}% 100%`, cursor: "url('/reddot.png') 32 32, auto" }}
+                className="cursor-default w-[15vw] h-[2.5vh] accent-black outline-none"
                 id="volume-control"
                 type="range"
                 min="0"
@@ -1633,9 +1640,10 @@ export default function AimTrainer() {
                 onChange={(e) => setVolume(e.target.value)}
               />
             </div>
+
             {/* Toggle for shop indicator */}
             <div className="flex items-center">
-              <label htmlFor="shop-indicator-toggle" className=" mr-2 text-[3vh]">show shop indicator:</label>
+              <label htmlFor="shop-indicator-toggle" className="mr-2 text-[3vh]">show shop indicator:</label>
               <input
                 className="accent-black w-6 h-6"
                 id="shop-indicator-toggle"
@@ -1645,8 +1653,16 @@ export default function AimTrainer() {
               />
             </div>
           </div>
+
+          {/* GT2 icon at the bottom center */}
+          <div className="absolute bottom-8 w-full flex justify-center">
+            <a href="https://glyphteck.com/" target="_blank" rel="noopener noreferrer">
+              <img src="/gt2.png" alt="GT2 icon" className="w-32" />
+            </a>
+          </div>
         </div>
       )}
+
     </main >
   );
 }
